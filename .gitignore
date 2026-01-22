@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+
+# Output files
+output/
+*.csv
+*-intermediate.json
+*-report.txt
+
+# OS files
+.DS_Store
+Thumbs.db

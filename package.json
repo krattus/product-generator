@@ -1,0 +1,37 @@
+{
+  "name": "woocommerce-product-generator",
+  "version": "1.0.0",
+  "description": "WooCommerce product listing generator with AI",
+  "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "cli": "node product-generator.js",
+    "generate": "node product-generator.js --input products.txt --output import.csv"
+  },
+  "keywords": [
+    "woocommerce",
+    "product-generator",
+    "cli",
+    "ai",
+    "openai"
+  ],
+  "author": "Ardi",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "chalk": "^5.3.0",
+    "cli-progress": "^3.12.0",
+    "commander": "^11.1.0",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.22.1",
+    "inquirer": "^9.2.12",
+    "openai": "^4.24.1",
+    "ora": "^8.0.1",
+    "p-limit": "^5.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+# Example product list for WooCommerce Product Generator
+# Lines starting with # are comments
+# Add one product name per line
+
+iPhone 15 Pro Max
+Samsung Galaxy S24 Ultra
+Sony WH-1000XM5 Headphones
+DJI Mini 4 Pro Drone
+Dyson V15 Detect Vacuum

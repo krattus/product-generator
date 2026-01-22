@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WooCommerce Product Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WooCommerce Product Generator</h1>
+      <p class="subtitle">Generate multilingual product listings with AI</p>
+    </header>
+
+    <main>
+      <div class="main-content">
+        <!-- Input Section -->
+        <section class="input-section">
+          <div class="card">
+            <h2>Enter Products</h2>
+            <p class="hint">Enter product names, one per line</p>
+            <textarea id="products-input" placeholder="iPhone 15 Pro
+Samsung Galaxy S24
+Sony WH-1000XM5
+DJI Mini 4 Pro"></textarea>
+            <div class="input-actions">
+              <span id="product-count">0 products</span>
+              <button id="generate-btn" class="btn btn-primary">Generate Products</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Progress Section (hidden by default) -->
+        <section id="progress-section" class="progress-section hidden">
+          <div class="card">
+            <h2>Processing</h2>
+            <div class="progress-bar-container">
+              <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="progress-text">0% (0/0)</p>
+
+            <div id="product-list" class="product-list">
+              <!-- Products will be added here dynamically -->
+            </div>
+
+            <div id="log-container" class="log-container">
+              <h3>Activity Log</h3>
+              <div id="log-output" class="log-output"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Results Section (hidden by default) -->
+        <section id="results-section" class="results-section hidden">
+          <div class="card">
+            <h2>Results</h2>
+            <div id="summary" class="summary">
+              <!-- Summary will be added here dynamically -->
+            </div>
+            <div class="download-actions">
+              <button id="download-csv" class="btn btn-success">Download CSV</button>
+              <button id="download-report" class="btn btn-secondary">Download Report</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="card">
+          <h2>Recent Jobs</h2>
+          <div id="jobs-list" class="jobs-list">
+            <p class="no-jobs">No recent jobs</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <p>Powered by OpenAI GPT-4</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
