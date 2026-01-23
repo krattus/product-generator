@@ -104,8 +104,8 @@ async function processJob(jobId) {
         const searchResults = await searchProduct(product, logger);
 
         // Step 2: Generate content with OpenAI
-        logger.info(`Generating content for: ${product}`);
-        const content = await generateProductContent(searchResults, logger);
+        logger.info(`Generating content for: ${product} (${job.language})`);
+        const content = await generateProductContent(searchResults, job.language, logger);
 
         // Merge results
         const result = {
@@ -154,7 +154,7 @@ async function processJob(jobId) {
     const csvPath = path.join(outputDir, `products-${jobId}.csv`);
     const reportPath = path.join(outputDir, `products-${jobId}-report.txt`);
 
-    await generateCSV(results, csvPath, logger);
+    await generateCSV(results, csvPath, job.language, logger);
     await generateReport(results, csvPath, logger);
 
     // Update job status
@@ -218,13 +218,17 @@ app.post('/api/generate', (req, res) => {
     });
   }
 
-  const { products } = req.body;
+  const { products, language = 'et' } = req.body;
 
   if (!products || !Array.isArray(products) || products.length === 0) {
     return res.status(400).json({
       error: 'Products array is required'
     });
   }
+
+  // Validate language
+  const validLanguages = ['et', 'en', 'ru'];
+  const selectedLanguage = validLanguages.includes(language) ? language : 'et';
 
   // Filter empty strings
   const cleanProducts = products
@@ -242,6 +246,7 @@ app.post('/api/generate', (req, res) => {
   const job = {
     id: jobId,
     products: cleanProducts,
+    language: selectedLanguage,
     status: 'pending',
     createdAt: new Date().toISOString(),
     progress: { current: 0, total: cleanProducts.length }

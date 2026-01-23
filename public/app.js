@@ -1,6 +1,7 @@
 // DOM Elements
 const productsInput = document.getElementById('products-input');
 const productCount = document.getElementById('product-count');
+const languageSelect = document.getElementById('language-select');
 const generateBtn = document.getElementById('generate-btn');
 const progressSection = document.getElementById('progress-section');
 const progressBar = document.getElementById('progress-bar');
@@ -17,6 +18,7 @@ const jobsList = document.getElementById('jobs-list');
 let currentJobId = null;
 let eventSource = null;
 let products = [];
+let selectedLanguage = 'et';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,6 +55,9 @@ async function startGeneration() {
     return;
   }
 
+  // Get selected language
+  selectedLanguage = languageSelect.value;
+
   // Disable button
   generateBtn.disabled = true;
   generateBtn.textContent = 'Starting...';
@@ -62,7 +67,7 @@ async function startGeneration() {
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ products })
+      body: JSON.stringify({ products, language: selectedLanguage })
     });
 
     const data = await response.json();

@@ -3,40 +3,71 @@ import fs from 'fs/promises';
 import path from 'path';
 
 /**
- * WooCommerce CSV column definitions for WPML compatibility
+ * WooCommerce CSV column definitions - matching exact export format
+ * Headers are in Estonian as per WooCommerce Estonian locale
  */
 const CSV_HEADERS = [
-  { id: 'sku', title: 'SKU' },
-  { id: 'name_et', title: 'Name [et]' },
-  { id: 'name_en', title: 'Name [en]' },
-  { id: 'name_ru', title: 'Name [ru]' },
-  { id: 'description_et', title: 'Description [et]' },
-  { id: 'description_en', title: 'Description [en]' },
-  { id: 'description_ru', title: 'Description [ru]' },
-  { id: 'short_description_et', title: 'Short description [et]' },
-  { id: 'short_description_en', title: 'Short description [en]' },
-  { id: 'short_description_ru', title: 'Short description [ru]' },
-  { id: 'regular_price', title: 'Regular price' },
-  { id: 'categories', title: 'Categories' },
-  { id: 'images', title: 'Images' },
-  { id: 'status', title: 'Status' },
-  { id: 'seo_title_et', title: 'Meta: _yoast_wpseo_title [et]' },
-  { id: 'seo_title_en', title: 'Meta: _yoast_wpseo_title [en]' },
-  { id: 'seo_title_ru', title: 'Meta: _yoast_wpseo_title [ru]' },
-  { id: 'seo_description_et', title: 'Meta: _yoast_wpseo_metadesc [et]' },
-  { id: 'seo_description_en', title: 'Meta: _yoast_wpseo_metadesc [en]' },
-  { id: 'seo_description_ru', title: 'Meta: _yoast_wpseo_metadesc [ru]' },
-  { id: 'confidence', title: 'Info Confidence' },
-  { id: 'original_research', title: 'Original Research (EN)' }
+  { id: 'id', title: 'ID' },
+  { id: 'type', title: 'Tüüp' },
+  { id: 'sku', title: 'Tootekood' },
+  { id: 'gtin', title: 'GTIN, UPC, EAN, or ISBN' },
+  { id: 'name', title: 'Nimi' },
+  { id: 'published', title: 'Avaldatud' },
+  { id: 'featured', title: 'Esiletõstetud?' },
+  { id: 'visibility', title: 'Nähtavus kataloogis' },
+  { id: 'short_description', title: 'Lühikirjeldus' },
+  { id: 'description', title: 'Kirjeldus' },
+  { id: 'sale_price_start', title: 'Soodushinna alguskuupäev' },
+  { id: 'sale_price_end', title: 'Soodushinna lõpukuupäev' },
+  { id: 'tax_status', title: 'Maksustamine' },
+  { id: 'tax_class', title: 'Maksuklass' },
+  { id: 'in_stock', title: 'Laos?' },
+  { id: 'stock', title: 'Ladu' },
+  { id: 'low_stock', title: 'Madal laojääk' },
+  { id: 'backorders', title: 'Järeltellimused lubatud?' },
+  { id: 'sold_individually', title: 'Müüakse üksikuna?' },
+  { id: 'weight', title: 'Kaal (g)' },
+  { id: 'length', title: 'Pikkus (cm)' },
+  { id: 'width', title: 'Laius (cm)' },
+  { id: 'height', title: 'Kõrgus (cm)' },
+  { id: 'allow_reviews', title: 'Luba klientide arvustusi?' },
+  { id: 'purchase_note', title: 'Ostumärkus' },
+  { id: 'sale_price', title: 'Soodushind' },
+  { id: 'regular_price', title: 'Tavahind' },
+  { id: 'categories', title: 'Kategooriad' },
+  { id: 'tags', title: 'Sildid' },
+  { id: 'shipping_class', title: 'Tarneklass' },
+  { id: 'images', title: 'Pildid' },
+  { id: 'download_limit', title: 'Allalaadimiste limiit' },
+  { id: 'download_expiry', title: 'Allalaadimise aegumise päevi' },
+  { id: 'parent', title: 'Ülem' },
+  { id: 'grouped_products', title: 'Grupeeritud tooted' },
+  { id: 'upsells', title: 'Ülesmüügid' },
+  { id: 'cross_sells', title: 'Ristmüügid' },
+  { id: 'external_url', title: 'Väline URL' },
+  { id: 'button_text', title: 'Nupu tekst' },
+  { id: 'position', title: 'Positsioon' },
+  { id: 'brands', title: 'Brändid' },
+  { id: 'attribute_1_name', title: 'Omaduse 1 nimi' },
+  { id: 'attribute_1_values', title: 'Omaduse 1 väärtus(ed)' },
+  { id: 'attribute_1_visible', title: 'Omaduse 1 nähtavus' },
+  { id: 'attribute_1_global', title: 'Omaduse 1 globaalsus' },
+  { id: 'meta_ingredients', title: 'Meta: sisaldus_ja_koostisosad' },
+  { id: 'meta_ingredients_field', title: 'Meta: _sisaldus_ja_koostisosad' },
+  { id: 'meta_usage', title: 'Meta: kasutamine_ja_hoiustamine' },
+  { id: 'meta_usage_field', title: 'Meta: _kasutamine_ja_hoiustamine' }
 ];
 
 /**
  * Generate WooCommerce-compatible CSV file
  */
-export async function generateCSV(products, outputPath, logger) {
+export async function generateCSV(products, outputPath, language = 'et', logger) {
   // Ensure output directory exists
   const outputDir = path.dirname(outputPath);
   await fs.mkdir(outputDir, { recursive: true }).catch(() => {});
+
+  // Add BOM for UTF-8 Excel compatibility
+  const BOM = '\ufeff';
 
   const csvWriter = createObjectCsvWriter({
     path: outputPath,
@@ -46,9 +77,13 @@ export async function generateCSV(products, outputPath, logger) {
 
   const records = products
     .filter(p => p.success !== false)
-    .map(product => formatProductForCSV(product));
+    .map(product => formatProductForCSV(product, language));
 
   await csvWriter.writeRecords(records);
+
+  // Prepend BOM to file for Excel UTF-8 compatibility
+  const content = await fs.readFile(outputPath, 'utf8');
+  await fs.writeFile(outputPath, BOM + content, 'utf8');
 
   logger?.info(`CSV file generated: ${outputPath}`);
   logger?.info(`Total products: ${records.length}`);
@@ -61,75 +96,71 @@ export async function generateCSV(products, outputPath, logger) {
 }
 
 /**
- * Format product data for CSV
+ * Format product data for WooCommerce CSV
  */
-function formatProductForCSV(product) {
+function formatProductForCSV(product, language) {
   return {
+    id: '',  // Empty for new products
+    type: 'simple',
     sku: product.sku || '',
-    name_et: cleanText(product.name_et) || product.productName,
-    name_en: cleanText(product.name_en) || product.productName,
-    name_ru: cleanText(product.name_ru) || product.productName,
-    description_et: cleanText(product.description_et) || '',
-    description_en: cleanText(product.description_en) || '',
-    description_ru: cleanText(product.description_ru) || '',
-    short_description_et: cleanText(product.short_description_et) || '',
-    short_description_en: cleanText(product.short_description_en) || '',
-    short_description_ru: cleanText(product.short_description_ru) || '',
+    gtin: '',
+    name: cleanText(product.name) || product.productName,
+    published: 0,  // Draft mode - not published
+    featured: 0,
+    visibility: 'visible',
+    short_description: product.short_description || '',
+    description: product.description || '',
+    sale_price_start: '',
+    sale_price_end: '',
+    tax_status: 'taxable',
+    tax_class: '',
+    in_stock: 1,
+    stock: '',
+    low_stock: '',
+    backorders: 0,
+    sold_individually: 0,
+    weight: '',
+    length: '',
+    width: '',
+    height: '',
+    allow_reviews: 1,
+    purchase_note: '',
+    sale_price: '',
     regular_price: product.suggested_price_eur || '',
-    categories: product.category_suggestion || 'Uncategorized',
+    categories: product.category_suggestion || '',
+    tags: '',
+    shipping_class: '',
     images: (product.images || []).join(', '),
-    status: 'draft', // Always draft for review
-    seo_title_et: cleanText(product.seo_title_et) || '',
-    seo_title_en: cleanText(product.seo_title_en) || '',
-    seo_title_ru: cleanText(product.seo_title_ru) || '',
-    seo_description_et: cleanText(product.seo_description_et) || '',
-    seo_description_en: cleanText(product.seo_description_en) || '',
-    seo_description_ru: cleanText(product.seo_description_ru) || '',
-    confidence: product.confidence || 'low',
-    original_research: cleanText(product.originalResearch) || ''
+    download_limit: '',
+    download_expiry: '',
+    parent: '',
+    grouped_products: '',
+    upsells: '',
+    cross_sells: '',
+    external_url: '',
+    button_text: '',
+    position: 0,
+    brands: product.brand || '',
+    attribute_1_name: product.brand ? 'Kaubamärk' : '',
+    attribute_1_values: product.brand || '',
+    attribute_1_visible: product.brand ? 1 : '',
+    attribute_1_global: product.brand ? 1 : '',
+    meta_ingredients: product.ingredients || '',
+    meta_ingredients_field: product.ingredients ? 'field_67ddb9e61221c' : '',
+    meta_usage: product.usage_instructions || '',
+    meta_usage_field: product.usage_instructions ? 'field_6183e47bbcb05' : ''
   };
 }
 
 /**
- * Clean text for CSV (remove problematic characters)
+ * Clean text for CSV (preserve HTML but normalize whitespace)
  */
 function cleanText(text) {
   if (!text) return '';
   return text
-    .replace(/[\r\n]+/g, ' ')  // Replace newlines with spaces
-    .replace(/\s+/g, ' ')       // Normalize whitespace
-    .replace(/"/g, '""')        // Escape quotes for CSV
+    .replace(/\r\n/g, '\n')  // Normalize line endings
+    .replace(/\t/g, ' ')     // Replace tabs with spaces
     .trim();
-}
-
-/**
- * Save intermediate results to JSON file
- */
-export async function saveIntermediateResults(products, filePath, logger) {
-  const data = {
-    timestamp: new Date().toISOString(),
-    totalProducts: products.length,
-    successCount: products.filter(p => p.success !== false).length,
-    failedCount: products.filter(p => p.success === false).length,
-    products
-  };
-
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-  logger?.info(`Intermediate results saved: ${filePath}`);
-}
-
-/**
- * Load intermediate results from JSON file
- */
-export async function loadIntermediateResults(filePath, logger) {
-  try {
-    const data = await fs.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(data);
-    logger?.info(`Loaded ${parsed.products?.length || 0} products from intermediate file`);
-    return parsed;
-  } catch (error) {
-    return null;
-  }
 }
 
 /**
@@ -196,7 +227,5 @@ export async function generateReport(products, outputPath, logger) {
 
 export default {
   generateCSV,
-  saveIntermediateResults,
-  loadIntermediateResults,
   generateReport
 };
