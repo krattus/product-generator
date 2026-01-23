@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WooCommerce Product Generator</title>
+  <title>WooCommerce Tootegeneraator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>WooCommerce Product Generator</h1>
-      <p class="subtitle">Generate multilingual product listings with AI</p>
+      <h1>WooCommerce Tootegeneraator</h1>
+      <p class="subtitle">Loo tootekirjeldusi tehisintellekti abil</p>
     </header>
 
     <main>
@@ -18,25 +18,25 @@
         <!-- Input Section -->
         <section class="input-section">
           <div class="card">
-            <h2>Enter Products</h2>
-            <p class="hint">Enter product names, one per line</p>
+            <h2>Sisesta tooted</h2>
+            <p class="hint">Sisesta tootenimed, iga toode eraldi reale</p>
             <textarea id="products-input" placeholder="iPhone 15 Pro
 Samsung Galaxy S24
 Sony WH-1000XM5
 DJI Mini 4 Pro"></textarea>
 
             <div class="language-selector">
-              <label for="language-select">Output Language:</label>
+              <label for="language-select">Väljundi keel:</label>
               <select id="language-select">
-                <option value="et" selected>Eesti (Estonian)</option>
-                <option value="en">English</option>
-                <option value="ru">Russian</option>
+                <option value="et" selected>Eesti</option>
+                <option value="en">Inglise</option>
+                <option value="ru">Vene</option>
               </select>
             </div>
 
             <div class="input-actions">
-              <span id="product-count">0 products</span>
-              <button id="generate-btn" class="btn btn-primary">Generate Products</button>
+              <span id="product-count">0 toodet</span>
+              <button id="generate-btn" class="btn btn-primary">Genereeri tooted</button>
             </div>
           </div>
         </section>
@@ -44,7 +44,7 @@ DJI Mini 4 Pro"></textarea>
         <!-- Progress Section (hidden by default) -->
         <section id="progress-section" class="progress-section hidden">
           <div class="card">
-            <h2>Processing</h2>
+            <h2>Töötlemine</h2>
             <div class="progress-bar-container">
               <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
             </div>
@@ -55,7 +55,7 @@ DJI Mini 4 Pro"></textarea>
             </div>
 
             <div id="log-container" class="log-container">
-              <h3>Activity Log</h3>
+              <h3>Tegevuste logi</h3>
               <div id="log-output" class="log-output"></div>
             </div>
           </div>
@@ -64,13 +64,13 @@ DJI Mini 4 Pro"></textarea>
         <!-- Results Section (hidden by default) -->
         <section id="results-section" class="results-section hidden">
           <div class="card">
-            <h2>Results</h2>
+            <h2>Tulemused</h2>
             <div id="summary" class="summary">
               <!-- Summary will be added here dynamically -->
             </div>
             <div class="download-actions">
-              <button id="download-csv" class="btn btn-success">Download CSV</button>
-              <button id="download-report" class="btn btn-secondary">Download Report</button>
+              <button id="download-csv" class="btn btn-success">Laadi alla CSV</button>
+              <button id="download-report" class="btn btn-secondary">Laadi alla raport</button>
             </div>
           </div>
         </section>
@@ -79,16 +79,16 @@ DJI Mini 4 Pro"></textarea>
       <!-- Sidebar -->
       <aside class="sidebar">
         <div class="card">
-          <h2>Recent Jobs</h2>
+          <h2>Viimased tööd</h2>
           <div id="jobs-list" class="jobs-list">
-            <p class="no-jobs">No recent jobs</p>
+            <p class="no-jobs">Viimased tööd puuduvad</p>
           </div>
         </div>
       </aside>
     </main>
 
     <footer>
-      <p>Powered by OpenAI GPT-4</p>
+      <p>Põhineb OpenAI GPT-4 tehnoloogial</p>
     </footer>
   </div>
 

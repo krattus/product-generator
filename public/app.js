@@ -31,7 +31,7 @@ function setupEventListeners() {
   // Update product count on input
   productsInput.addEventListener('input', () => {
     const lines = productsInput.value.split('\n').filter(line => line.trim());
-    productCount.textContent = `${lines.length} product${lines.length !== 1 ? 's' : ''}`;
+    productCount.textContent = `${lines.length} toodet`;
   });
 
   // Generate button click
@@ -51,7 +51,7 @@ async function startGeneration() {
     .filter(line => line.length > 0);
 
   if (products.length === 0) {
-    alert('Please enter at least one product name');
+    alert('Palun sisesta vähemalt üks tootenimi');
     return;
   }
 
@@ -60,7 +60,7 @@ async function startGeneration() {
 
   // Disable button
   generateBtn.disabled = true;
-  generateBtn.textContent = 'Starting...';
+  generateBtn.textContent = 'Alustan...';
 
   try {
     // Call API to start generation
@@ -88,9 +88,9 @@ async function startGeneration() {
     loadRecentJobs();
 
   } catch (error) {
-    alert(`Error: ${error.message}`);
+    alert(`Viga: ${error.message}`);
     generateBtn.disabled = false;
-    generateBtn.textContent = 'Generate Products';
+    generateBtn.textContent = 'Genereeri tooted';
   }
 }
 
@@ -226,7 +226,7 @@ function addLogEntry(data) {
 // Handle job completion
 function handleComplete(data) {
   generateBtn.disabled = false;
-  generateBtn.textContent = 'Generate Products';
+  generateBtn.textContent = 'Genereeri tooted';
 
   // Show results section
   resultsSection.classList.remove('hidden');
@@ -237,27 +237,27 @@ function handleComplete(data) {
   summaryDiv.innerHTML = `
     <div class="summary-item">
       <div class="value">${summary.total}</div>
-      <div class="label">Total</div>
+      <div class="label">Kokku</div>
     </div>
     <div class="summary-item success">
       <div class="value">${summary.successful}</div>
-      <div class="label">Successful</div>
+      <div class="label">Õnnestunud</div>
     </div>
     <div class="summary-item failed">
       <div class="value">${summary.failed}</div>
-      <div class="label">Failed</div>
+      <div class="label">Ebaõnnestunud</div>
     </div>
     <div class="summary-item">
       <div class="value">${summary.highConfidence}</div>
-      <div class="label">High Conf.</div>
+      <div class="label">Kõrge usaldusväärsus</div>
     </div>
     <div class="summary-item">
       <div class="value">${summary.mediumConfidence}</div>
-      <div class="label">Medium Conf.</div>
+      <div class="label">Keskmine</div>
     </div>
     <div class="summary-item">
       <div class="value">${summary.lowConfidence}</div>
-      <div class="label">Low Conf.</div>
+      <div class="label">Madal</div>
     </div>
   `;
 
@@ -268,7 +268,7 @@ function handleComplete(data) {
   // Scroll to results
   resultsSection.scrollIntoView({ behavior: 'smooth' });
 
-  addLogEntry({ level: 'success', message: 'Job completed! You can now download the files.' });
+  addLogEntry({ level: 'success', message: 'Töö lõpetatud! Nüüd saad failid alla laadida.' });
 }
 
 // Download file
@@ -284,9 +284,16 @@ async function loadRecentJobs() {
     const jobs = await response.json();
 
     if (jobs.length === 0) {
-      jobsList.innerHTML = '<p class="no-jobs">No recent jobs</p>';
+      jobsList.innerHTML = '<p class="no-jobs">Viimased tööd puuduvad</p>';
       return;
     }
+
+    const statusLabels = {
+      completed: 'lõpetatud',
+      processing: 'töötlemisel',
+      pending: 'ootel',
+      failed: 'ebaõnnestunud'
+    };
 
     jobsList.innerHTML = jobs.map(job => {
       const statusIcon = {
@@ -298,13 +305,14 @@ async function loadRecentJobs() {
 
       const date = new Date(job.createdAt);
       const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const statusText = statusLabels[job.status] || job.status;
 
       return `
         <div class="job-item ${job.status}" data-job-id="${job.id}">
           <span class="job-icon">${statusIcon}</span>
           <div class="job-info">
-            <div class="job-id">${job.productCount} products</div>
-            <div class="job-meta">${timeStr} - ${job.status}</div>
+            <div class="job-id">${job.productCount} toodet</div>
+            <div class="job-meta">${timeStr} - ${statusText}</div>
           </div>
         </div>
       `;
@@ -347,7 +355,7 @@ async function viewJob(jobId) {
 
       // Update progress
       progressBar.style.width = '100%';
-      progressText.textContent = '100% (Complete)';
+      progressText.textContent = '100% (Lõpetatud)';
 
       // Show results
       handleComplete({
