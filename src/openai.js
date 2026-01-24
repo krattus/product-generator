@@ -25,24 +25,26 @@ const LANGUAGE_CONFIG = {
   et: {
     name: 'Estonian',
     nativeName: 'Eesti',
-    systemPrompt: 'Sa oled ekspert e-kaubanduse tootekirjelduste loomisel. Vastad alati JSON formaadis.',
-    contentPrompt: (productName, rawContent) => `Sa oled professionaalne e-poe tootekirjelduste looja. Loo atraktiivne tootekirjeldus järgmise toote jaoks.
+    systemPrompt: 'Sa oled ekspert e-kaubanduse tootekirjelduste loomisel toidulisandite ja tervisetoodete jaoks. Kasuta AINULT EFSA (Euroopa Toiduohutusameti) poolt heakskiidetud tõenduspõhiseid väiteid. Vastad alati JSON formaadis.',
+    contentPrompt: (productName, rawContent) => `Sa oled professionaalne e-poe tootekirjelduste looja toidulisandite ja tervisetoodete jaoks. Loo põhjalik tootekirjeldus järgmise toote jaoks.
 
 TOOTE NIMI: ${productName}
 
 KOGUTUD INFO:
 ${rawContent || 'Info puudub - loo kirjeldus toote nime põhjal'}
 
+OLULINE: Kasuta AINULT EFSA (Euroopa Toiduohutusameti) poolt heakskiidetud tõenduspõhiseid tervisväiteid!
+
 Vasta JSON formaadis:
 {
-  "name": "Toote nimi eesti keeles",
-  "description": "Põhjalik tootekirjeldus (150-300 sõna). Kirjelda toote eeliseid, omadusi ja kasutusalasid. Kasuta veenvat müügikeelt. Kasuta HTML vormingut (<p>, <ul>, <li> jne).",
+  "name": "${productName} - [Eestikeelne tootenimi]",
   "short_description": "Lühike tootekirjeldus (30-50 sõna). Peamised müügiargumendid.",
-  "category_suggestion": "Soovituslik tootekategooria (nt Elektroonika, Tervis ja ilu, jne)",
-  "suggested_price_eur": "Hinnanguline hind eurodes (ainult number või null kui pole võimalik hinnata)",
-  "brand": "Brändi nimi (kui tuvastatav tootenimest)",
-  "ingredients": "Koostisosad (kui tegemist on toidulisandi või kosmeetikaga, muidu null)",
-  "usage_instructions": "Kasutamisjuhend (kui asjakohane, muidu null)"
+  "description": "Põhjalik tootekirjeldus (MINIMAALSELT 300 sõna). Struktureeritud ja ladusas eesti keeles. Kasuta HTML vormingut (<p>, <ul>, <li> jne). Sisalda:<ul><li>Toote üldkirjeldus ja eesmärk</li><li>Peamised eelised ja omadused bullet-pointidena</li><li>Kellele toode sobib</li><li>Miks valida just see toode</li></ul>Kasuta AINULT EFSA heakskiidetud tõenduspõhiseid väiteid!",
+  "category_suggestion": "Soovituslik tootekategooria",
+  "suggested_price_eur": "Hinnanguline hind eurodes (ainult number või null)",
+  "brand": "Brändi nimi (kui tuvastatav)",
+  "meta_sisaldus_ja_koostisosad": "Formaadis:\n\n<strong>Toitumisalane teave</strong>\n<div class='table-responsive'><table class='nutrition-table'><thead><tr><th>Toimeaine</th><th>Portsjon</th><th>%NRV*</th></tr></thead><tbody><tr><td>[Toimeaine]</td><td>[kogus]</td><td>[%NRV või **]</td></tr></tbody></table></div>\n<p><small>*NRV - Täiskasvanu päevane võrdluskogus<br>** - Päevane võrdluskogus ei ole määratud</small></p>\n\n<strong>Koostisosad</strong>\n<p>[Koostisosade loetelu komadega eraldatult ühel real]</p>\n\n<strong>Allergeenid</strong>\n<p>[Sisaldab: ... VÕI Ei sisalda levinud allergeene]</p>\n\n<strong>Ei sisalda</strong>\n<p>[nt GMO-vaba, suhkruvaba, gluteenivaba, laktoosivaba jms - kui asjakohane]</p>",
+  "meta_kasutamine_ja_hoiustamine": "Formaadis:\n\n<strong>Kasutamine</strong>\n<p>[Täpne annustamisjuhis - mitu kapslit/tabletti, kui tihti, millega koos võtta]</p>\n\n<strong>Hoiustamine</strong>\n<p>[Hoiustamistingimused - temperatuur, valgus, niiskus jms]</p>\n\n<strong>Hoiatused</strong>\n<p>Mitte ületada soovitatud ööpäevast annust. Mitte kasutada toidulisandit mitmekesise toitumise asendajana! Hoida laste eest kättesaamatus kohas. [Lisa siia toote-spetsiifilised hoiatused, nt rasedatele, imetavatele emadele, teatud haiguste korral jms]</p>"
 }
 
 Vasta AINULT JSON-iga, ilma lisaselgitusteta.`
@@ -114,7 +116,7 @@ export async function generateProductContent(searchResults, language = 'et', log
 
   try {
     const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-5.2',
       messages: [
         {
           role: 'system',
@@ -126,7 +128,7 @@ export async function generateProductContent(searchResults, language = 'et', log
         }
       ],
       temperature: 0.7,
-      max_tokens: 2000
+      max_completion_tokens: 4000
     });
 
     const content = response.choices[0]?.message?.content;
@@ -153,8 +155,8 @@ export async function generateProductContent(searchResults, language = 'et', log
       category_suggestion: parsed.category_suggestion || '',
       suggested_price_eur: parsed.suggested_price_eur,
       brand: parsed.brand || '',
-      ingredients: parsed.ingredients || '',
-      usage_instructions: parsed.usage_instructions || '',
+      meta_sisaldus_ja_koostisosad: parsed.meta_sisaldus_ja_koostisosad || parsed.ingredients || '',
+      meta_kasutamine_ja_hoiustamine: parsed.meta_kasutamine_ja_hoiustamine || parsed.usage_instructions || '',
       originalResearch: rawContent,
       confidence
     };
