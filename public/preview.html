@@ -97,6 +97,15 @@
       min-width: 300px;
     }
 
+    .debug-info {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background: #f0f0f0;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
     /* Product Preview */
     .product-preview {
       background: white;
@@ -312,9 +321,15 @@
     }
 
     .ingredients-tab ._tableContainer_80l1q_1,
-    .ingredients-tab ._tableWrapper_80l1q_14 {
+    .ingredients-tab ._tableWrapper_80l1q_14,
+    .ingredients-tab [class*="_tableContainer"],
+    .ingredients-tab [class*="_tableWrapper"] {
       display: block !important;
       flex-direction: unset !important;
+    }
+
+    .ingredients-tab .group {
+      display: block !important;
     }
 
     .ingredients-tab table {
@@ -509,6 +524,7 @@
         <label for="productSelect"><strong>Select Product:</strong></label>
         <select id="productSelect"></select>
       </div>
+      <div class="debug-info" id="debugInfo" style="display: none;"></div>
     </div>
 
     <div id="previewContainer">
@@ -541,67 +557,102 @@
     let headers = [];
     let currentProduct = null;
 
-    // CSV Parser
+    /**
+     * Parse CSV with proper handling of:
+     * - Quoted fields containing commas
+     * - Quoted fields containing newlines
+     * - Escaped quotes (doubled quotes "")
+     * - BOM character
+     */
     function parseCSV(text) {
-      const lines = [];
-      let currentLine = '';
-      let inQuotes = false;
+      // Remove BOM if present
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
 
-      for (let i = 0; i < text.length; i++) {
+      const rows = [];
+      let currentRow = [];
+      let currentField = '';
+      let inQuotes = false;
+      let i = 0;
+
+      while (i < text.length) {
         const char = text[i];
         const nextChar = text[i + 1];
 
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            currentLine += '"';
-            i++;
+        if (inQuotes) {
+          if (char === '"') {
+            if (nextChar === '"') {
+              // Escaped quote - add single quote and skip next
+              currentField += '"';
+              i += 2;
+              continue;
+            } else {
+              // End of quoted field
+              inQuotes = false;
+              i++;
+              continue;
+            }
           } else {
-            inQuotes = !inQuotes;
-          }
-        } else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !inQuotes) {
-          if (currentLine.trim()) {
-            lines.push(currentLine);
-          }
-          currentLine = '';
-          if (char === '\r') i++;
-        } else if (char !== '\r') {
-          currentLine += char;
-        }
-      }
-
-      if (currentLine.trim()) {
-        lines.push(currentLine);
-      }
-
-      return lines.map(line => parseCSVLine(line));
-    }
-
-    function parseCSVLine(line) {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            current += '"';
+            // Regular character inside quotes (including newlines)
+            currentField += char;
             i++;
-          } else {
-            inQuotes = !inQuotes;
+            continue;
           }
-        } else if (char === ',' && !inQuotes) {
-          result.push(current);
-          current = '';
         } else {
-          current += char;
+          // Not in quotes
+          if (char === '"') {
+            // Start of quoted field
+            inQuotes = true;
+            i++;
+            continue;
+          } else if (char === ',') {
+            // Field separator
+            currentRow.push(currentField);
+            currentField = '';
+            i++;
+            continue;
+          } else if (char === '\r' && nextChar === '\n') {
+            // Windows line ending
+            currentRow.push(currentField);
+            rows.push(currentRow);
+            currentRow = [];
+            currentField = '';
+            i += 2;
+            continue;
+          } else if (char === '\n') {
+            // Unix line ending
+            currentRow.push(currentField);
+            rows.push(currentRow);
+            currentRow = [];
+            currentField = '';
+            i++;
+            continue;
+          } else if (char === '\r') {
+            // Old Mac line ending
+            currentRow.push(currentField);
+            rows.push(currentRow);
+            currentRow = [];
+            currentField = '';
+            i++;
+            continue;
+          } else {
+            // Regular character
+            currentField += char;
+            i++;
+            continue;
+          }
         }
       }
 
-      result.push(current);
-      return result;
+      // Don't forget the last field and row
+      if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField);
+        rows.push(currentRow);
+      }
+
+      // Filter out empty rows
+      return rows.filter(row => row.some(cell => cell.trim() !== ''));
     }
 
     // File Upload Handler
@@ -611,14 +662,9 @@
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        let text = e.target.result;
-
-        // Remove BOM if present
-        if (text.charCodeAt(0) === 0xFEFF) {
-          text = text.slice(1);
-        }
-
+        const text = e.target.result;
         const rows = parseCSV(text);
+
         if (rows.length < 2) {
           alert('CSV file is empty or invalid');
           return;
@@ -632,6 +678,11 @@
           });
           return product;
         });
+
+        // Debug info
+        const debugInfo = document.getElementById('debugInfo');
+        debugInfo.style.display = 'block';
+        debugInfo.innerHTML = `Loaded ${products.length} product(s), ${headers.length} columns. Headers: ${headers.slice(0, 5).join(', ')}...`;
 
         // Populate product selector
         const select = document.getElementById('productSelect');
@@ -666,7 +717,7 @@
     function renderProduct(product) {
       const container = document.getElementById('previewContainer');
 
-      // Extract fields
+      // Extract fields - try both Estonian and English field names
       const name = product['Nimi'] || product['Name'] || 'Unnamed Product';
       const sku = product['Tootekood'] || product['SKU'] || '';
       const price = product['Tavahind'] || product['Regular price'] || '';
@@ -680,22 +731,16 @@
       const inStock = product['Laos?'] || product['In stock?'] || '1';
       const stock = product['Ladu'] || product['Stock'] || '';
 
-      // Custom meta fields
+      // Custom meta fields - the underscore version contains the actual HTML content
       const ingredients = product['Meta: _sisaldus_ja_koostisosad'] || '';
       const usage = product['Meta: _kasutamine_ja_hoiustamine'] || '';
-
-      // Process description - convert \n to actual newlines
-      const processedDesc = description.replace(/\\n/g, '\n');
-      const processedShortDesc = shortDesc.replace(/\\n/g, '\n');
-      const processedIngredients = ingredients.replace(/\\n/g, '\n');
-      const processedUsage = usage.replace(/\\n/g, '\n');
 
       container.innerHTML = `
         <div class="product-preview">
           <div class="product-header">
             <div class="product-gallery">
               ${images.length > 0 ? `
-                <img class="main-image" id="mainImage" src="${images[0]}" alt="${name}" onerror="this.parentElement.innerHTML='<div class=\\'no-image\\'>Image not available</div>'">
+                <img class="main-image" id="mainImage" src="${images[0]}" alt="${escapeHtml(name)}" onerror="this.parentElement.innerHTML='<div class=\\'no-image\\'>Image not available</div>'">
                 ${images.length > 1 ? `
                   <div class="thumbnails">
                     ${images.map((img, i) => `
@@ -716,19 +761,19 @@
                 </span>
               </div>
 
-              <h1>${name}</h1>
+              <h1>${escapeHtml(name)}</h1>
 
-              ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
+              ${sku ? `<div class="product-sku">SKU: ${escapeHtml(sku)}</div>` : ''}
 
               <div class="product-price">
                 ${salePrice ? `
-                  <span style="text-decoration: line-through; color: #999; font-size: 1.2rem;">${price} €</span>
-                  <span>${salePrice} €</span>
-                ` : `${price ? `${price} €` : 'Price not set'}`}
+                  <span style="text-decoration: line-through; color: #999; font-size: 1.2rem;">${escapeHtml(price)} €</span>
+                  <span>${escapeHtml(salePrice)} €</span>
+                ` : `${price ? `${escapeHtml(price)} €` : 'Price not set'}`}
               </div>
 
-              ${processedShortDesc ? `
-                <div class="product-short-description">${processedShortDesc}</div>
+              ${shortDesc ? `
+                <div class="product-short-description">${escapeHtml(shortDesc)}</div>
               ` : ''}
 
               <div class="add-to-cart">
@@ -737,8 +782,8 @@
               </div>
 
               <div class="product-meta">
-                ${categories ? `<span><strong>Kategooriad:</strong> ${categories.replace(/,/g, ', ')}</span>` : ''}
-                ${brand ? `<span><strong>Bränd:</strong> ${brand}</span>` : ''}
+                ${categories ? `<span><strong>Kategooriad:</strong> ${escapeHtml(categories).replace(/,/g, ', ')}</span>` : ''}
+                ${brand ? `<span><strong>Bränd:</strong> ${escapeHtml(brand)}</span>` : ''}
               </div>
             </div>
           </div>
@@ -746,23 +791,23 @@
           <div class="product-tabs">
             <div class="tab-headers">
               <button class="tab-header active" onclick="switchTab('description')">Kirjeldus</button>
-              ${processedIngredients ? `<button class="tab-header" onclick="switchTab('ingredients')">Koostis</button>` : ''}
-              ${processedUsage ? `<button class="tab-header" onclick="switchTab('usage')">Kasutamine</button>` : ''}
+              ${ingredients ? `<button class="tab-header" onclick="switchTab('ingredients')">Koostis</button>` : ''}
+              ${usage ? `<button class="tab-header" onclick="switchTab('usage')">Kasutamine</button>` : ''}
             </div>
 
             <div class="tab-content description-tab active" id="tab-description">
-              ${processedDesc || '<p>No description available.</p>'}
+              ${description || '<p>No description available.</p>'}
             </div>
 
-            ${processedIngredients ? `
+            ${ingredients ? `
               <div class="tab-content ingredients-tab" id="tab-ingredients">
-                ${processedIngredients}
+                ${ingredients}
               </div>
             ` : ''}
 
-            ${processedUsage ? `
+            ${usage ? `
               <div class="tab-content usage-tab" id="tab-usage">
-                ${processedUsage}
+                ${usage}
               </div>
             ` : ''}
           </div>
@@ -770,6 +815,13 @@
       `;
 
       document.getElementById('rawDataSection').style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     function changeImage(src, thumbnail) {
@@ -793,8 +845,8 @@
         const displayValue = value.length > 100 ? value.substring(0, 100) + '...' : value;
         return `
           <div class="field-item">
-            <span class="field-name">${header}:</span>
-            <span class="field-value ${!value ? 'empty' : ''}">${displayValue || '(empty)'}</span>
+            <span class="field-name">${escapeHtml(header)}:</span>
+            <span class="field-value ${!value ? 'empty' : ''}">${escapeHtml(displayValue) || '(empty)'}</span>
           </div>
         `;
       }).join('');

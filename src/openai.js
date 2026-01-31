@@ -98,6 +98,7 @@ KASUTAMINE JA HOIUSTAMINE (kasutamine_ja_hoiustamine) - kasuta täpselt seda HTM
 Vasta JSON formaadis:
 {
   "name": "${productName} - [täiendus kui vaja]",
+  "ean": "[EAN/GTIN kood kui leitud kogutud infost, muidu null]",
   "short_description": "Toidulisand\\n\\n[Lühike tootekirjeldus 30-50 sõna. Peamised müügiargumendid. Kasuta \\n reavahetusteks.]",
   "description": "[HTML kirjeldus ülaltoodud formaadis]",
   "category_suggestion": "Vitamiinid ja mineraalid > [Alamkategooria]",
@@ -149,6 +150,7 @@ DESCRIPTION HTML FORMAT (use this exact structure):
 Respond in JSON format:
 {
   "name": "Product name in English",
+  "ean": "[EAN/GTIN code if found in gathered information, otherwise null]",
   "short_description": "Short product description (30-50 words). Main selling points.",
   "description": "[HTML description in format above]",
   "category_suggestion": "Suggested product category",
@@ -200,6 +202,7 @@ HTML ФОРМАТ ОПИСАНИЯ (используйте точно эту с�
 Ответьте в формате JSON:
 {
   "name": "Название товара на русском языке",
+  "ean": "[EAN/GTIN код если найден в собранной информации, иначе null]",
   "short_description": "Краткое описание товара (30-50 слов). Основные аргументы.",
   "description": "[HTML описание в формате выше]",
   "category_suggestion": "Рекомендуемая категория товара",
@@ -345,6 +348,7 @@ export async function generateProductContent(searchResults, languageOrLogger, lo
       sku: generateSKU(productName),
       language,
       name: parsed.name || productName,
+      ean: parsed.ean || '',
       description: parsed.description || '',
       short_description: parsed.short_description || '',
       category_suggestion: parsed.category_suggestion || '',

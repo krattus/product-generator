@@ -98,10 +98,8 @@ const CSV_HEADERS = [
   { id: 'meta_fb_product_condition', title: 'Meta: fb_product_condition' },
   { id: 'meta_linked_variations', title: 'Meta: linked_variations' },
   { id: 'meta_linked_variations_underscore', title: 'Meta: _linked_variations' },
-  { id: 'meta_sisaldus_ja_koostisosad', title: 'Meta: sisaldus_ja_koostisosad' },
-  { id: 'meta_sisaldus_ja_koostisosad_field', title: 'Meta: _sisaldus_ja_koostisosad' },
-  { id: 'meta_kasutamine_ja_hoiustamine', title: 'Meta: kasutamine_ja_hoiustamine' },
-  { id: 'meta_kasutamine_ja_hoiustamine_field', title: 'Meta: _kasutamine_ja_hoiustamine' },
+  { id: 'meta_sisaldus_ja_koostisosad', title: 'Meta: _sisaldus_ja_koostisosad' },
+  { id: 'meta_kasutamine_ja_hoiustamine', title: 'Meta: _kasutamine_ja_hoiustamine' },
   { id: 'meta_woodmart_product_background', title: 'Meta: _woodmart_product-background' },
   { id: 'meta_rank_math_internal_links_processed', title: 'Meta: rank_math_internal_links_processed' },
   { id: 'meta_rank_math_primary_product_brand', title: 'Meta: rank_math_primary_product_brand' },
@@ -115,12 +113,6 @@ const CSV_HEADERS = [
   { id: 'meta_wpml_media_has_media', title: 'Meta: _wpml_media_has_media' },
   { id: 'meta_wc_facebook_sync_enabled_v2', title: 'Meta: _wc_facebook_sync_enabled_v2' }
 ];
-
-// ACF field keys (must match WordPress ACF configuration)
-const ACF_FIELD_KEYS = {
-  sisaldus_ja_koostisosad: 'field_67ddb9e61221c',
-  kasutamine_ja_hoiustamine: 'field_6183e47bbcb05'
-};
 
 /**
  * Generate WooCommerce-compatible CSV file
@@ -186,7 +178,7 @@ function formatProductForCSV(product, language) {
     id: '',  // Empty for new products
     type: 'simple',
     sku: product.sku || '',
-    gtin: '',
+    gtin: product.ean || '',
     name: cleanText(product.name) || product.productName,
 
     // Visibility (6-8)
@@ -273,12 +265,10 @@ function formatProductForCSV(product, language) {
     meta_fb_product_condition: '',
     meta_linked_variations: '',
     meta_linked_variations_underscore: '',
-    meta_sisaldus_ja_koostisosad: hasIngredients ? ACF_FIELD_KEYS.sisaldus_ja_koostisosad : '',
-    meta_sisaldus_ja_koostisosad_field: hasIngredients
+    meta_sisaldus_ja_koostisosad: hasIngredients
       ? formatIngredientsHtml(product.meta_sisaldus_ja_koostisosad || product.ingredients)
       : '',
-    meta_kasutamine_ja_hoiustamine: hasUsage ? ACF_FIELD_KEYS.kasutamine_ja_hoiustamine : '',
-    meta_kasutamine_ja_hoiustamine_field: hasUsage
+    meta_kasutamine_ja_hoiustamine: hasUsage
       ? formatUsageHtml(product.meta_kasutamine_ja_hoiustamine || product.usage_instructions)
       : '',
     meta_woodmart_product_background: '',
