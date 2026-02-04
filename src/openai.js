@@ -25,7 +25,7 @@ const NUTRITION_TABLE_TEMPLATE = `<table class="w-fit min-w-(--thread-content-wi
 <thead data-start="28" data-end="70">
 <tr data-start="28" data-end="70">
 <th data-start="28" data-end="44" data-col-size="sm"><strong data-start="30" data-end="43">Toimeaine</strong></th>
-<th data-start="44" data-end="56" data-col-size="sm"><strong data-start="46" data-end="55">Kogus (1 portsjon)</strong></th>
+<th data-start="44" data-end="56" data-col-size="sm"><strong data-start="46" data-end="55">Kogus (1 kapsel)</strong></th>
 <th data-start="56" data-end="70" data-col-size="sm"><strong data-start="58" data-end="67">% NRV</strong>*</th>
 </tr>
 </thead>
