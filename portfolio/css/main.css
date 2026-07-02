@@ -1,0 +1,505 @@
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;                 /* native smooth anchors */
+  scroll-padding-top: var(--nav-height);   /* keep sticky nav off targets */
+}
+
+body {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img, video, canvas { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+.mono   { font-family: var(--font-mono); font-size: var(--fs-small); letter-spacing: 0.12em; }
+.accent { color: var(--clr-accent); }
+
+.section {
+  padding: var(--space-xl) var(--gutter);
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.section__title {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  margin-bottom: var(--space-lg);
+}
+
+/* ==========================================================================
+   NAVIGATION
+   ========================================================================== */
+.nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--gutter);
+  transition: background 0.4s var(--ease-out), border-color 0.4s var(--ease-out);
+  border-bottom: 1px solid transparent;
+}
+
+/* .is-scrolled added by animations.js once the hero is passed */
+.nav.is-scrolled {
+  background: color-mix(in srgb, var(--clr-bg-elevated) 85%, transparent);
+  backdrop-filter: blur(12px);
+  border-color: var(--clr-border);
+}
+
+.nav__logo { font-weight: 700; letter-spacing: 0.06em; }
+.nav__logo-mark { color: var(--clr-accent-2); }
+
+.nav__links { display: flex; gap: var(--space-md); }
+.nav__links a {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  transition: color 0.25s, text-shadow 0.25s;
+}
+.nav__links a:hover {
+  color: var(--clr-accent);
+  text-shadow: var(--glow-accent);
+}
+
+/* ==========================================================================
+   HERO — stacked videos + mask reveal + particle canvas
+   Layer order (back → front):
+     gradient → videos → particles → copy
+   ========================================================================== */
+.hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Pure-CSS fallback: shows before videos load and forever on failures */
+.hero__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 20%, rgba(124, 92, 255, 0.25), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0, 240, 255, 0.15), transparent 60%),
+    linear-gradient(160deg, #0a0d18 0%, var(--clr-bg) 70%);
+}
+
+.hero__media,
+.hero__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__video {
+  object-fit: cover;
+  /* fallback text styling if <video> is unsupported */
+  color: var(--clr-text-muted);
+  font-family: var(--font-mono);
+  padding: var(--space-md);
+}
+
+/* Mask geometry driven by video-mask.js via these custom properties.
+   transparent = punched away (bottom video shows through),
+   black       = kept (top video stays visible).
+   The 55% inner stop gives the hole a soft feathered edge. */
+.hero__video--top {
+  --mask-x: 50%;
+  --mask-y: 50%;
+  --mask-size: 0px;   /* 0 = no hole; animated up to ~240px on hover */
+  -webkit-mask-image: radial-gradient(
+    circle var(--mask-size) at var(--mask-x) var(--mask-y),
+    transparent 0%,
+    transparent 55%,
+    black 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--mask-size) at var(--mask-x) var(--mask-y),
+    transparent 0%,
+    transparent 55%,
+    black 100%
+  );
+}
+
+/* Three.js canvas — blend mode keeps particles reading as light */
+.hero__particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  padding: 0 var(--gutter) var(--space-xl);
+  max-width: 1440px;
+  margin-inline: auto;
+  width: 100%;
+  pointer-events: none;                /* let hover reach the video mask… */
+}
+.hero__content a { pointer-events: auto; }  /* …but keep the CTA clickable */
+
+.hero__kicker { color: var(--clr-accent); margin-bottom: var(--space-sm); }
+
+.hero__title {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.6);
+}
+
+.hero__sub {
+  color: var(--clr-text-muted);
+  max-width: 42ch;
+  margin-top: var(--space-sm);
+}
+
+.hero__cta {
+  display: inline-block;
+  margin-top: var(--space-md);
+  padding: 0.8em 1.6em;
+  border: 1px solid var(--clr-accent);
+  color: var(--clr-accent);
+  border-radius: var(--radius);
+  transition: background 0.3s, box-shadow 0.3s, color 0.3s;
+}
+.hero__cta:hover {
+  background: var(--clr-accent);
+  color: var(--clr-bg);
+  box-shadow: var(--glow-accent);
+}
+
+.hero__scroll-hint {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--space-md);
+  color: var(--clr-text-muted);
+  writing-mode: vertical-rl;
+  animation: hint-drift 2.4s ease-in-out infinite;
+}
+@keyframes hint-drift {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50%      { transform: translateY(8px); opacity: 1; }
+}
+
+/* ==========================================================================
+   SKILLS
+   ========================================================================== */
+.skills__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.skills__item {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  grid-template-areas: "idx title" ". desc";
+  align-items: baseline;
+  gap: 0 var(--space-sm);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--clr-border);
+  /* start hidden — animations.js reveals; .no-js in main.js un-hides
+     if modules fail so content is never lost */
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.skills__index { grid-area: idx; color: var(--clr-accent-2); }
+
+.skills__item h3 {
+  grid-area: title;
+  font-size: var(--fs-item);
+  font-weight: 500;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+.skills__item:hover h3 {
+  color: var(--clr-accent);
+  text-shadow: var(--glow-accent);
+}
+
+.skills__item p {
+  grid-area: desc;
+  color: var(--clr-text-muted);
+  max-width: 60ch;
+  margin-top: var(--space-xs);
+}
+
+/* Generic scroll-reveal targets (section titles, contact block) */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* If JS never ran, show everything (class set on <html> in a fallback) */
+.no-js [data-reveal],
+.no-js .skills__item { opacity: 1; transform: none; }
+
+/* ==========================================================================
+   PORTFOLIO GRID
+   ========================================================================== */
+.portfolio__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.filter-btn {
+  padding: 0.5em 1.1em;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.12em;
+  font-size: var(--fs-small);
+  transition: color 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.filter-btn:hover { color: var(--clr-text); border-color: var(--clr-text-muted); }
+.filter-btn.is-active {
+  color: var(--clr-accent);
+  border-color: var(--clr-accent);
+  box-shadow: var(--glow-accent);
+}
+
+.portfolio__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.card {
+  position: relative;
+  background: var(--clr-bg-elevated);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.3s, transform 0.3s var(--ease-out), box-shadow 0.3s;
+}
+.card:hover {
+  border-color: var(--clr-accent);
+  transform: translateY(-4px);
+  box-shadow: var(--glow-accent);
+}
+.card:focus-visible { outline: 2px solid var(--clr-accent); outline-offset: 2px; }
+
+.card__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  /* gradient placeholder shows until real thumbnail videos exist */
+  background: linear-gradient(135deg, var(--clr-surface), #171d2e 60%, #1a1030);
+}
+
+.card__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+/* Only fade the video in once it's actually playing (set by JS) —
+   missing placeholder files keep the gradient instead of a black box */
+.card.is-playing .card__video { opacity: 1; }
+
+.card__category {
+  position: absolute;
+  top: var(--space-xs);
+  left: var(--space-xs);
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  background: rgba(5, 6, 10, 0.7);
+  backdrop-filter: blur(6px);
+  color: var(--clr-accent);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.card__body { padding: var(--space-sm); }
+.card__title { font-size: 1.15rem; font-weight: 500; }
+.card__meta {
+  margin-top: 0.3em;
+  color: var(--clr-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+/* Inline expansion panel — height animated by GSAP in portfolio-grid.js */
+.card__details {
+  height: 0;
+  overflow: hidden;
+  border-top: 0 solid var(--clr-border);
+}
+.card.is-open .card__details { border-top-width: 1px; }
+
+.card__details-inner { padding: var(--space-sm); }
+.card__details-inner p { color: var(--clr-text-muted); font-size: 0.9rem; }
+
+.card__link {
+  display: inline-block;
+  margin-top: var(--space-xs);
+  color: var(--clr-accent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.12em;
+}
+.card__link:hover { text-shadow: var(--glow-accent); }
+
+/* ==========================================================================
+   CASE STUDY PAGE
+   ========================================================================== */
+.case-hero {
+  position: relative;
+  height: 70vh;
+  min-height: 420px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  background: linear-gradient(160deg, #0a0d18, var(--clr-bg));
+}
+.case-hero__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+.case-hero__content {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-lg) var(--gutter);
+}
+.case-hero__content h1 { font-size: var(--fs-title); }
+
+.case-body {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: var(--space-lg) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.case-body h2 {
+  font-size: 1.1rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--clr-accent);
+  margin-bottom: var(--space-sm);
+}
+.case-body p { color: var(--clr-text-muted); }
+
+.case-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.case-tools li {
+  padding: 0.4em 1em;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--clr-text-muted);
+}
+
+.case-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--clr-border);
+  margin-top: var(--space-lg);
+  padding: var(--space-lg) var(--gutter);
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.case-next a { transition: color 0.25s, text-shadow 0.25s; }
+.case-next a:hover { color: var(--clr-accent); text-shadow: var(--glow-accent); }
+.case-next__label { color: var(--clr-text-muted); }
+.case-next__title { font-size: var(--fs-item); font-weight: 500; }
+
+/* ==========================================================================
+   CONTACT + FOOTER
+   ========================================================================== */
+.contact { text-align: center; }
+.contact__lead { color: var(--clr-text-muted); }
+
+.contact__email {
+  display: inline-block;
+  margin-top: var(--space-md);
+  font-size: var(--fs-item);
+  font-weight: 500;
+  color: var(--clr-accent);
+  transition: text-shadow 0.3s;
+}
+.contact__email:hover { text-shadow: var(--glow-accent); }
+
+.contact__socials {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+.contact__socials a { color: var(--clr-text-muted); transition: color 0.25s; }
+.contact__socials a:hover { color: var(--clr-accent-2); }
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--gutter);
+  border-top: 1px solid var(--clr-border);
+  color: var(--clr-text-muted);
+}
+.footer a:hover { color: var(--clr-accent); }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 640px) {
+  .nav__links { gap: var(--space-sm); }
+
+  .skills__item {
+    grid-template-columns: 1fr;
+    grid-template-areas: "idx" "title" "desc";
+  }
+
+  .case-next { flex-direction: column; gap: var(--space-sm); text-align: center; }
+}
+
+/* Respect users who opt out of motion — GSAP/Three also check this in JS */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero__scroll-hint { animation: none; }
+  [data-reveal], .skills__item { opacity: 1; transform: none; }
+}

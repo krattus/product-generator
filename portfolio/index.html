@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!-- .no-js is removed by main.js; if modules fail to load, CSS keeps all
+     scroll-reveal content visible instead of stuck at opacity 0 -->
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio — Generative AI Video, Web Animation, 3D Design, AI Audio, Creative Coding" />
+  <title>KRISTJAN — Creative Technologist</title>
+
+  <!-- Fonts: swap or remove freely. Space Grotesk = display, IBM Plex Mono = labels/meta -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/main.css" />
+
+  <!--
+    Import map: lets the vanilla ES modules in /js use bare specifiers
+    (import gsap from "gsap") without any bundler or build step.
+    Pin versions here when you upgrade.
+  -->
+  <script type="importmap">
+    {
+      "imports": {
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm",
+        "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js/+esm",
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVIGATION — sticky, smooth-scroll anchors (see animations.js
+       for the scrolled-state background toggle)
+       ============================================================ -->
+  <header class="nav" id="site-nav">
+    <a class="nav__logo" href="#hero" aria-label="Back to top">
+      <span class="nav__logo-mark">▲</span> KRISTJAN<span class="accent">.</span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#skills">Skills</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============================================================
+         HERO — two stacked fullscreen looping videos.
+         .hero__video--top plays by default; hovering punches a soft
+         circular hole in its CSS mask, revealing --bottom underneath.
+         Mask logic lives in js/video-mask.js.
+         The Three.js particle canvas sits between the videos and the
+         copy; a pure-CSS gradient behind everything is the zero-cost
+         fallback while videos/WebGL load (or if they never do).
+         ============================================================ -->
+    <section class="hero" id="hero">
+      <div class="hero__gradient" aria-hidden="true"></div>
+
+      <div class="hero__media" id="hero-media">
+        <!-- BOTTOM video: revealed through the mask on hover -->
+        <video class="hero__video hero__video--bottom"
+               autoplay muted loop playsinline preload="metadata"
+               poster="assets/videos/hero-reveal-poster.jpg">
+          <source src="assets/videos/hero-reveal.mp4" type="video/mp4" />
+          <source src="assets/videos/hero-reveal.webm" type="video/webm" />
+          Your browser doesn't support HTML video — imagine a glitchy
+          generative dreamscape here instead.
+        </video>
+
+        <!-- TOP video: visible by default, masked on hover -->
+        <video class="hero__video hero__video--top" id="hero-video-top"
+               autoplay muted loop playsinline preload="metadata"
+               poster="assets/videos/hero-base-poster.jpg">
+          <source src="assets/videos/hero-base.mp4" type="video/mp4" />
+          <source src="assets/videos/hero-base.webm" type="video/webm" />
+          Your browser doesn't support HTML video — imagine slow neon
+          cityscape footage here instead.
+        </video>
+      </div>
+
+      <!-- Three.js mounts here; stays empty (CSS gradient shows) on
+           reduced-motion, save-data, or small screens -->
+      <canvas class="hero__particles" id="hero-particles" aria-hidden="true"></canvas>
+
+      <div class="hero__content">
+        <p class="hero__kicker mono" data-hero-line>CREATIVE TECHNOLOGIST — TALLINN / REMOTE</p>
+        <h1 class="hero__title" data-hero-line>
+          I make machines<br />
+          <span class="accent">dream</span> in public.
+        </h1>
+        <p class="hero__sub" data-hero-line>
+          Generative video, web animation, 3D and AI audio —
+          hover the screen to look underneath.
+        </p>
+        <a class="hero__cta mono" href="#portfolio" data-hero-line>VIEW WORK ↓</a>
+      </div>
+
+      <div class="hero__scroll-hint mono" aria-hidden="true">SCROLL</div>
+    </section>
+
+    <!-- ============================================================
+         SKILLS — items fade + slide in with a GSAP ScrollTrigger
+         stagger (see initSkillsReveal in js/animations.js)
+         ============================================================ -->
+    <section class="skills section" id="skills">
+      <h2 class="section__title" data-reveal>What I do<span class="accent">_</span></h2>
+      <ul class="skills__list">
+        <li class="skills__item" data-skill>
+          <span class="skills__index mono">01</span>
+          <h3>Generative AI Video</h3>
+          <p>Diffusion pipelines, motion direction and post — film-grade output from latent noise.</p>
+        </li>
+        <li class="skills__item" data-skill>
+          <span class="skills__index mono">02</span>
+          <h3>Web Animation</h3>
+          <p>GSAP, scroll choreography and micro-interactions that make interfaces feel alive.</p>
+        </li>
+        <li class="skills__item" data-skill>
+          <span class="skills__index mono">03</span>
+          <h3>3D Design</h3>
+          <p>Real-time Three.js scenes, procedural geometry and stylized rendering for the web.</p>
+        </li>
+        <li class="skills__item" data-skill>
+          <span class="skills__index mono">04</span>
+          <h3>AI Audio Production</h3>
+          <p>Voice synthesis, generative scoring and sound design for interactive pieces.</p>
+        </li>
+        <li class="skills__item" data-skill>
+          <span class="skills__index mono">05</span>
+          <h3>Creative Coding</h3>
+          <p>Shaders, canvas experiments and tooling — the glue between all of the above.</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         PORTFOLIO GRID — cards are rendered by js/portfolio-grid.js
+         from a data array (easy to swap in real projects).
+         Filters toggle between the four media categories.
+         ============================================================ -->
+    <section class="portfolio section" id="portfolio">
+      <h2 class="section__title" data-reveal>Selected work<span class="accent">_</span></h2>
+
+      <div class="portfolio__filters mono" id="portfolio-filters" role="tablist" aria-label="Filter portfolio by medium">
+        <button class="filter-btn is-active" data-filter="all">ALL</button>
+        <button class="filter-btn" data-filter="generative-video">GEN VIDEO</button>
+        <button class="filter-btn" data-filter="web-animation">WEB ANIM</button>
+        <button class="filter-btn" data-filter="3d-design">3D</button>
+        <button class="filter-btn" data-filter="ai-audio">AI AUDIO</button>
+      </div>
+
+      <div class="portfolio__grid" id="portfolio-grid">
+        <!-- Cards injected by portfolio-grid.js -->
+        <noscript>Enable JavaScript to browse the portfolio grid.</noscript>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         CONTACT
+         ============================================================ -->
+    <section class="contact section" id="contact">
+      <h2 class="section__title" data-reveal>Get in touch<span class="accent">_</span></h2>
+      <p class="contact__lead" data-reveal>
+        Available for commissions, collaborations and strange ideas.
+      </p>
+      <a class="contact__email" href="mailto:kristjanfreelance@gmail.com" data-reveal>
+        kristjanfreelance@gmail.com
+      </a>
+      <div class="contact__socials mono" data-reveal>
+        <a href="#" rel="noopener">INSTAGRAM</a>
+        <a href="#" rel="noopener">VIMEO</a>
+        <a href="#" rel="noopener">GITHUB</a>
+        <a href="#" rel="noopener">X</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mono">
+    <span>© 2026 — built by hand, no frameworks</span>
+    <a href="#hero">BACK TO TOP ↑</a>
+  </footer>
+
+</body>
+</html>

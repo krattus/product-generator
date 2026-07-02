@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Case Study — Neon Districts</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/main.css" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm",
+        "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js/+esm"
+      }
+    }
+  </script>
+  <script type="module" src="js/case-study.js"></script>
+</head>
+<body>
+
+  <header class="nav is-scrolled" id="site-nav">
+    <a class="nav__logo" href="index.html">
+      <span class="nav__logo-mark">▲</span> KRISTJAN<span class="accent">.</span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html#skills">Skills</a>
+      <a href="index.html#portfolio">Portfolio</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============================================================
+         CASE STUDY TEMPLATE
+         Duplicate this file per project (neon-districts.html, …) or
+         keep one template and fill it from a JSON lookup using the
+         ?project= query param (hook provided in js/case-study.js).
+         ============================================================ -->
+    <section class="case-hero">
+      <video class="case-hero__video" autoplay muted loop playsinline
+             poster="assets/videos/case/neon-districts-poster.jpg">
+        <source src="assets/videos/case/neon-districts-hero.mp4" type="video/mp4" />
+        Hero reel — imagine a neon-soaked generative cityscape.
+      </video>
+      <div class="case-hero__content">
+        <p class="mono accent" data-case-line>GENERATIVE VIDEO · 2026</p>
+        <h1 data-case-line>Neon Districts</h1>
+      </div>
+    </section>
+
+    <div class="case-body">
+
+      <section data-reveal>
+        <h2>The project</h2>
+        <p>
+          A three-minute music video generated end-to-end with diffusion
+          models: roughly 400 shots explored, 96 kept, all graded and cut
+          against the track's stem markers. The brief was "Blade Runner if
+          it rained data instead of water" — this is the placeholder
+          description; replace it with the real story of the brief, the
+          constraints, and your role.
+        </p>
+      </section>
+
+      <section data-reveal>
+        <h2>Tools used</h2>
+        <ul class="case-tools">
+          <li>Runway Gen-3</li>
+          <li>ComfyUI</li>
+          <li>DaVinci Resolve</li>
+          <li>Topaz Video AI</li>
+          <li>After Effects</li>
+        </ul>
+      </section>
+
+      <section data-reveal>
+        <h2>Results &amp; learnings</h2>
+        <p>
+          Placeholder metrics: 1.2M views in the first month, picked up by
+          two festivals. Key learning — prompt consistency mattered less
+          than a rigid shot grammar decided before generation; write yours
+          here so future-you remembers what actually moved the needle.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Next-project navigation: keeps visitors moving through the work -->
+  <nav class="case-next" aria-label="Project navigation">
+    <a href="case-study.html?project=ghost-broadcast">
+      <span class="case-next__label mono">← PREVIOUS</span>
+      <p class="case-next__title">Ghost Broadcast</p>
+    </a>
+    <a href="case-study.html?project=latent-flora" style="text-align: right;">
+      <span class="case-next__label mono">NEXT →</span>
+      <p class="case-next__title">Latent Flora</p>
+    </a>
+  </nav>
+
+  <footer class="footer mono">
+    <span>© 2026 — built by hand, no frameworks</span>
+    <a href="index.html#portfolio">← ALL WORK</a>
+  </footer>
+
+</body>
+</html>

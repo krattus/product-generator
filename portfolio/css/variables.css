@@ -1,0 +1,45 @@
+/* ==========================================================================
+   DESIGN TOKENS — edit these to retheme the entire site.
+   Dark cyberpunk base: near-black blues, neon cyan + magenta accents.
+   ========================================================================== */
+:root {
+  /* ---- Color ---- */
+  --clr-bg:          #05060a;   /* page background */
+  --clr-bg-elevated: #0b0e16;   /* cards, nav-on-scroll */
+  --clr-surface:     #11151f;   /* expanded panels, inputs */
+  --clr-border:      #1d2333;   /* hairlines */
+
+  --clr-text:        #e8ecf4;
+  --clr-text-muted:  #8a93a8;
+
+  --clr-accent:      #00f0ff;   /* neon cyan — primary accent */
+  --clr-accent-2:    #ff2d78;   /* hot magenta — secondary accent */
+  --clr-accent-3:    #7c5cff;   /* violet — gradients only */
+
+  /* Soft glows built from the accents */
+  --glow-accent:   0 0 24px rgba(0, 240, 255, 0.35);
+  --glow-accent-2: 0 0 24px rgba(255, 45, 120, 0.30);
+
+  /* ---- Typography ---- */
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace;
+
+  --fs-hero:    clamp(2.5rem, 7vw, 6rem);
+  --fs-title:   clamp(1.8rem, 4vw, 3.2rem);
+  --fs-item:    clamp(1.3rem, 2.5vw, 2rem);
+  --fs-body:    1rem;
+  --fs-small:   0.8rem;
+
+  /* ---- Spacing ---- */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 4rem;
+  --space-xl: clamp(4rem, 12vh, 9rem);   /* between sections */
+  --gutter:   clamp(1rem, 4vw, 4rem);    /* page side padding */
+
+  /* ---- Misc ---- */
+  --radius:     10px;
+  --nav-height: 64px;
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+}
