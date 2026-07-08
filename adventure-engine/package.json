@@ -1,0 +1,11 @@
+{
+  "name": "adventure-engine",
+  "version": "0.1.0",
+  "description": "A zero-dependency JavaScript framework for crafting King's Quest / Space Quest style adventure games",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "play": "node play.js"
+  },
+  "license": "MIT"
+}

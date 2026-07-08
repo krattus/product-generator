@@ -1,0 +1,129 @@
+/* Retro Sierra-inspired look for adventure-engine's browser UI. */
+
+:root {
+  --adv-bg: #0a0a23;
+  --adv-panel: #000040;
+  --adv-text: #c8c8e8;
+  --adv-bright: #ffffff;
+  --adv-accent: #ffd75f;
+  --adv-cyan: #5fd7ff;
+  --adv-green: #5fff87;
+  --adv-red: #ff5f5f;
+  --adv-magenta: #d787ff;
+  --adv-dim: #6c6c9c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--adv-bg);
+}
+
+body {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  font-family: 'Courier New', ui-monospace, monospace;
+}
+
+.adv-root {
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  background: var(--adv-panel);
+  border-left: 2px solid #2a2a6a;
+  border-right: 2px solid #2a2a6a;
+}
+
+.adv-statusbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 6px 12px;
+  background: var(--adv-accent);
+  color: #000;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.adv-output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.adv-line { white-space: pre-wrap; margin: 0 0 2px; color: var(--adv-text); }
+.adv-line + .adv-room-name { margin-top: 14px; }
+
+.adv-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adv-line.adv-title {
+  color: var(--adv-accent);
+  font-weight: bold;
+  font-size: 20px;
+  letter-spacing: 0.15em;
+  margin: 10px 0;
+}
+
+.adv-room-name {
+  color: var(--adv-cyan);
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 14px;
+}
+
+.adv-exits { color: var(--adv-green); }
+.adv-error { color: var(--adv-red); }
+.adv-system { color: var(--adv-dim); font-style: italic; }
+.adv-dialogue { color: var(--adv-bright); }
+.adv-choice { color: var(--adv-accent); }
+.adv-quest { color: var(--adv-magenta); font-weight: bold; }
+.adv-score { color: var(--adv-green); }
+.adv-echo { color: var(--adv-dim); margin-top: 10px; }
+
+.adv-death {
+  color: var(--adv-red);
+  font-weight: bold;
+}
+
+.adv-win {
+  color: var(--adv-green);
+  font-weight: bold;
+}
+
+.adv-inputbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 2px solid #2a2a6a;
+  background: #000030;
+}
+
+.adv-prompt { color: var(--adv-accent); font-weight: bold; }
+
+.adv-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--adv-bright);
+  font-family: inherit;
+  font-size: 15px;
+  caret-color: var(--adv-accent);
+}
+
+.adv-input::placeholder { color: var(--adv-dim); }
