@@ -49,10 +49,12 @@ export function createBrowserUI(game, root) {
   game.start({
     print,
     save(json) {
-      localStorage.setItem(saveKey, json);
+      try { localStorage.setItem(saveKey, json); }
+      catch { print('(Storage is unavailable here — the save may not survive this tab.)', 'system'); }
     },
     load() {
-      return localStorage.getItem(saveKey);
+      try { return localStorage.getItem(saveKey); }
+      catch { return null; }
     },
     onQuit() {
       print('(To leave, simply close the tab. To play again, type RESTART.)', 'system');
