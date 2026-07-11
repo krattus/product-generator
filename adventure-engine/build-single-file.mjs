@@ -22,6 +22,7 @@ const sources = [
   'src/dialogue.js',
   'src/engine.js',
   'ui/browser-ui.js',
+  'ui/walk-ui.js',
 ].map((f) => path.join(here, f));
 sources.push(path.join(gameDir, 'game.js'));
 
@@ -84,6 +85,8 @@ ${css}
 <script type="module">
 ${js}
 createBrowserUI(game, document.getElementById('game'));
+window.__advWalk = attachWalkLayer(game, document.getElementById('game'));
+window.__advGame = game; // console/debug handle
 </script>
 `;
 

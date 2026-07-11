@@ -18,6 +18,18 @@ export const game = new Game({
   // which itself is relative to the page that hosts the game.
   assetBase: './games/crystal-crown/',
   titleImage: 'art/title.jpg',
+  // Character sprites for the King's Quest-style walk layer.
+  sprites: {
+    hero: {
+      side: { image: 'art/hero-walk.png', frames: 8, fps: 10 },
+      front: { image: 'art/hero-front.png' },
+      back: { image: 'art/hero-back.png' },
+      height: 0.30,
+    },
+    king: { image: 'art/npc-king.png', height: 0.33 },
+    hermit: { image: 'art/npc-hermit.png', height: 0.26 },
+    troll: { image: 'art/npc-troll.png', height: 0.40 },
+  },
 });
 
 /* ---------------------------------------------------------------------- */
@@ -26,6 +38,11 @@ export const game = new Game({
 
 game.room('courtyard', {
   image: 'art/courtyard.jpg',
+  walk: {
+    horizon: 0.55,
+    obstacles: [[0.36, 0.58, 0.64, 0.86]], // fountain
+    spawn: { north: [0.3, 0.64], default: [0.5, 0.93] },
+  },
   name: 'Castle Courtyard',
   description:
     'Banners of blue and gold hang limp above the cobblestone courtyard of Castle ' +
@@ -40,6 +57,11 @@ game.room('courtyard', {
 
 game.room('throne', {
   image: 'art/throne.jpg',
+  walk: {
+    horizon: 0.55,
+    obstacles: [[0.28, 0, 0.72, 0.64]], // dais, throne and crown case
+    npcs: { king: [0.68, 0.7] },
+  },
   name: 'Throne Room',
   description:
     'Torchlight flickers across a long crimson carpet leading to an empty stone ' +
@@ -52,6 +74,13 @@ game.room('throne', {
 
 game.room('meadow', {
   image: 'art/meadow.jpg',
+  walk: {
+    horizon: 0.5,
+    obstacles: [
+      [0, 0.5, 0.24, 0.62],    // gnarled tree knoll
+      [0.7, 0.52, 0.98, 0.72], // mossy boulders
+    ],
+  },
   name: 'Sunny Meadow',
   description:
     'Wildflowers nod in the breeze across this broad meadow south of the castle. ' +
@@ -66,6 +95,13 @@ game.room('meadow', {
 
 game.room('forest', {
   image: 'art/forest.jpg',
+  walk: {
+    horizon: 0.5,
+    obstacles: [
+      [0.02, 0.55, 0.3, 0.78], // shrine rocks
+      [0.72, 0.5, 0.98, 0.74], // woodshed
+    ],
+  },
   name: 'Whispering Forest',
   description:
     'Ancient oaks lean close overhead, and the light falls green and dim. The ' +
@@ -79,6 +115,16 @@ game.room('forest', {
 
 game.room('hut', {
   image: 'art/hut.jpg',
+  walk: {
+    horizon: 0.58,
+    obstacles: [
+      [0.3, 0.76, 0.6, 0.97],  // fire pit
+      [0.46, 0.56, 0.74, 0.76], // table
+      [0.1, 0.6, 0.44, 0.76],  // bed
+    ],
+    npcs: { hermit: [0.8, 0.86] },
+    spawn: { south: [0.72, 0.92] },
+  },
   name: "Hermit's Hut",
   description:
     'A round little hut of woven branches, cosy despite the clutter: drying herbs, ' +
@@ -91,6 +137,19 @@ game.room('hut', {
 
 game.room('river', {
   image: 'art/river.jpg',
+  walk: {
+    horizon: 0.55,
+    // The troll blocks the bridge bodily until his toll is paid.
+    obstacles: (ctx) => {
+      const water = [
+        [0.4, 0.78, 1.01, 1.01], // rapids below the bridge
+        [0, 0.55, 0.14, 0.66],   // upstream gully
+      ];
+      return ctx.hasFlag('troll-paid') ? water : [...water, [0.46, 0.58, 0.62, 0.8]];
+    },
+    npcs: (ctx) => ({ troll: ctx.hasFlag('troll-paid') ? [0.72, 0.63] : [0.52, 0.7] }),
+    spawn: { east: [0.9, 0.72] },
+  },
   name: 'Troll Bridge',
   description:
     'The Wyre River roars beneath a stout wooden bridge — the only crossing for ' +
@@ -108,6 +167,12 @@ game.room('river', {
 
 game.room('cave-mouth', {
   image: 'art/cave-mouth.jpg',
+  walk: {
+    horizon: 0.5,
+    obstacles: [[0.62, 0.84, 1.01, 1.01]], // fallen rocks
+    hotspots: [{ rect: [0.52, 0.52, 0.86, 0.74], command: 'in' }], // the cave opening
+    spawn: { in: [0.45, 0.82] },
+  },
   name: 'Cave Entrance',
   description:
     'A ragged mouth of stone gapes in the cliff face. Cold air breathes out of the ' +
@@ -122,6 +187,15 @@ game.room('cave-mouth', {
 
 game.room('cave', {
   image: 'art/cave.jpg',
+  walk: {
+    horizon: 0.52,
+    obstacles: [
+      [0.42, 0.6, 0.92, 1.01], // the chasm
+      [0, 0.62, 0.14, 1.01],   // stalagmite forest
+    ],
+    edges: { bottom: 'out', top: 'north' },
+    spawn: { north: [0.3, 0.64] },
+  },
   name: 'Echoing Cave',
   dark: true,
   description:
@@ -151,6 +225,14 @@ game.room('cave', {
 
 game.room('chamber', {
   image: 'art/chamber.jpg',
+  walk: {
+    horizon: 0.5,
+    obstacles: [
+      [0.44, 0.52, 0.78, 0.78], // quartz pedestal
+      [0, 0.5, 0.14, 1.01],     // crystal outcrops
+      [0.86, 0.5, 1.01, 1.01],
+    ],
+  },
   name: 'Crystal Chamber',
   description:
     'You haul yourself over the chasm lip into a chamber of pure wonder: crystals ' +

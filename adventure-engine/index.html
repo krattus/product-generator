@@ -12,8 +12,10 @@
     // To play a different adventure, point this import at your own game file.
     import { game } from './games/crystal-crown/game.js';
     import { createBrowserUI } from './ui/browser-ui.js';
+    import { attachWalkLayer } from './ui/walk-ui.js';
 
     createBrowserUI(game, document.getElementById('game'));
+    attachWalkLayer(game, document.getElementById('game'));
   </script>
 </body>
 </html>

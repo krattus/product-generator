@@ -356,7 +356,7 @@ export class Game {
   /* Room display                                                        */
   /* ------------------------------------------------------------------ */
 
-  _enterRoom(roomId) {
+  _enterRoom(roomId, from = null) {
     const room = this.rooms.get(roomId);
     if (!room) throw new Error(`Unknown room "${roomId}"`);
     this.state.currentRoom = roomId;
@@ -366,7 +366,7 @@ export class Game {
     if (room.def.onEnter) room.def.onEnter(this.ctx(), { firstVisit });
     if (this.state.status !== 'playing') return;
 
-    this.emit('room:enter', { room, firstVisit });
+    this.emit('room:enter', { room, firstVisit, from });
     if (this.state.status !== 'playing') return;
 
     this.lookAround();
@@ -449,7 +449,7 @@ export class Game {
     if (room.def.onExit) room.def.onExit(ctx, { direction: dir });
     if (this.state.status !== 'playing') return true;
 
-    this._enterRoom(exit.to);
+    this._enterRoom(exit.to, dir);
     return true;
   }
 

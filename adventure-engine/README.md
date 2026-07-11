@@ -256,6 +256,36 @@ without a light source show a black screen. The terminal player simply ignores a
 The Crystal Crown's scenes were AI-generated (Higgsfield, `nano_banana_2`) from
 one shared style prompt so all ten match; see `games/crystal-crown/art/`.
 
+## Walkabout mode (King's Quest style)
+
+`ui/walk-ui.js` turns the picture window into a live canvas: an animated hero
+you steer with the arrow keys / WASD, NPC sprites standing in the rooms,
+perspective scaling, and room transitions by walking off the screen edges —
+while the text parser keeps working underneath, exactly like an AGI-era Sierra
+game. Attach it after the base UI:
+
+```js
+createBrowserUI(game, root);
+attachWalkLayer(game, root);
+```
+
+Authoring lives in the game file (all coordinates normalized 0..1):
+
+- `config.sprites` — hero (`side` walk-cycle strip + `front`/`back` stills)
+  and one image per NPC.
+- room `walk` blocks — `horizon` (top of the walkable floor), `obstacles`
+  rectangles, `npcs` positions, `spawn` points per entry direction, `edges`
+  overrides, and `hotspots` (walk-in triggers like a cave mouth). `obstacles`
+  and `npcs` may be functions of the game context, so the world reacts to
+  state — the Crystal Crown's troll bodily blocks the bridge until paid.
+
+The hero's walk cycle was made with Higgsfield's video-to-spritesheet
+pipeline: a key pose (`flux_2`), animated by `seedance1_5` with identical
+start/end frames for a seamless loop, frames extracted, chroma-keyed and
+assembled into `art/hero-walk.png`. Typing still drives every interaction;
+Up/Down browse history while you're composing a command and steer the hero
+when the input is empty.
+
 ## Single-file build
 
 `node build-single-file.mjs [gameDir] [outFile]` bundles the engine, browser UI,

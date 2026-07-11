@@ -55,14 +55,15 @@ body {
 
 .adv-scene {
   flex: 0 0 auto;
-  aspect-ratio: 16 / 7;
-  max-height: 42vh;
+  aspect-ratio: 16 / 8;
+  max-height: 52vh;
   background: #000;
   border-bottom: 2px solid #2a2a6a;
   overflow: hidden;
 }
 
-.adv-scene img {
+.adv-scene img,
+.adv-scene canvas {
   width: 100%;
   height: 100%;
   object-fit: cover;
