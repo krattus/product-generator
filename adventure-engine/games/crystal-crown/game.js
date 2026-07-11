@@ -14,6 +14,10 @@ export const game = new Game({
     'at the castle gates seeking your fortune. Perhaps today you shall find it.',
   startRoom: 'courtyard',
   maxScore: 100,
+  // Scene art (generated with Higgsfield): paths are relative to assetBase,
+  // which itself is relative to the page that hosts the game.
+  assetBase: './games/crystal-crown/',
+  titleImage: 'art/title.jpg',
 });
 
 /* ---------------------------------------------------------------------- */
@@ -21,6 +25,7 @@ export const game = new Game({
 /* ---------------------------------------------------------------------- */
 
 game.room('courtyard', {
+  image: 'art/courtyard.jpg',
   name: 'Castle Courtyard',
   description:
     'Banners of blue and gold hang limp above the cobblestone courtyard of Castle ' +
@@ -34,6 +39,7 @@ game.room('courtyard', {
 });
 
 game.room('throne', {
+  image: 'art/throne.jpg',
   name: 'Throne Room',
   description:
     'Torchlight flickers across a long crimson carpet leading to an empty stone ' +
@@ -45,6 +51,7 @@ game.room('throne', {
 });
 
 game.room('meadow', {
+  image: 'art/meadow.jpg',
   name: 'Sunny Meadow',
   description:
     'Wildflowers nod in the breeze across this broad meadow south of the castle. ' +
@@ -58,6 +65,7 @@ game.room('meadow', {
 });
 
 game.room('forest', {
+  image: 'art/forest.jpg',
   name: 'Whispering Forest',
   description:
     'Ancient oaks lean close overhead, and the light falls green and dim. The ' +
@@ -70,6 +78,7 @@ game.room('forest', {
 });
 
 game.room('hut', {
+  image: 'art/hut.jpg',
   name: "Hermit's Hut",
   description:
     'A round little hut of woven branches, cosy despite the clutter: drying herbs, ' +
@@ -81,6 +90,7 @@ game.room('hut', {
 });
 
 game.room('river', {
+  image: 'art/river.jpg',
   name: 'Troll Bridge',
   description:
     'The Wyre River roars beneath a stout wooden bridge — the only crossing for ' +
@@ -97,6 +107,7 @@ game.room('river', {
 });
 
 game.room('cave-mouth', {
+  image: 'art/cave-mouth.jpg',
   name: 'Cave Entrance',
   description:
     'A ragged mouth of stone gapes in the cliff face. Cold air breathes out of the ' +
@@ -110,6 +121,7 @@ game.room('cave-mouth', {
 });
 
 game.room('cave', {
+  image: 'art/cave.jpg',
   name: 'Echoing Cave',
   dark: true,
   description:
@@ -138,6 +150,7 @@ game.room('cave', {
 });
 
 game.room('chamber', {
+  image: 'art/chamber.jpg',
   name: 'Crystal Chamber',
   description:
     'You haul yourself over the chasm lip into a chamber of pure wonder: crystals ' +

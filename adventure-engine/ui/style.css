@@ -53,6 +53,25 @@ body {
   overflow: hidden;
 }
 
+.adv-scene {
+  flex: 0 0 auto;
+  aspect-ratio: 16 / 7;
+  max-height: 42vh;
+  background: #000;
+  border-bottom: 2px solid #2a2a6a;
+  overflow: hidden;
+}
+
+.adv-scene img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.adv-scene-dark img { visibility: hidden; }
+
 .adv-output {
   flex: 1;
   overflow-y: auto;

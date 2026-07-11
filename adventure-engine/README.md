@@ -56,6 +56,7 @@ bottom).
 ```js
 game.room('meadow', {
   name: 'Sunny Meadow',
+  image: 'art/meadow.jpg',           // scene illustration, shown by the browser UI
   description: 'Wildflowers nod in the breeze...',   // string or (ctx) => string
   exits: {
     north: 'castle',                                  // simple exit
@@ -244,3 +245,19 @@ adventure-engine/
 The engine is UI-agnostic: `game.start(io)` takes any `io` object with
 `print(text, style)` and optional `save(json)` / `load() -> json` / `onQuit()`,
 so you can embed it anywhere — a web page, a terminal, a Discord bot.
+
+## Scene art
+
+The browser UI shows a Sierra-style picture window above the text. Give rooms an
+`image` path (resolved against `config.assetBase`, relative to the hosting page)
+and optionally a `config.titleImage` used at the start and on victory. Dark rooms
+without a light source show a black screen. The terminal player simply ignores art.
+
+The Crystal Crown's scenes were AI-generated (Higgsfield, `nano_banana_2`) from
+one shared style prompt so all ten match; see `games/crystal-crown/art/`.
+
+## Single-file build
+
+`node build-single-file.mjs [gameDir] [outFile]` bundles the engine, browser UI,
+a game and its art (as data URIs) into one self-contained HTML file you can host
+anywhere or send to a friend.
