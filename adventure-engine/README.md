@@ -321,8 +321,13 @@ path like `art/courtyard.jpg` resolved against the asset-base field), then:
   can't load, the wand keeps working.
 - **▶ Test walk** — drive a puppet with the arrow keys under the exact
   engine movement rules; edge and hotspot triggers show as toasts.
-- **Select** — drag vertices, shapes, markers, and overlay baselines;
-  Delete removes; Ctrl+Z / Ctrl+Shift+Z undo/redo.
+- **Select** — everything is movable and resizable: drag bodies to move;
+  pull the 8 bounding-box handles (corners + edge midpoints) to resize
+  rects, hotspots, overlays (their baseline keeps its relative depth) and
+  to scale whole polygons; drag individual polygon vertices, double-click
+  an edge to add one, Alt-click to remove one; drag markers, overlay
+  baselines, and the horizon line directly; Delete removes; Ctrl+Z /
+  Ctrl+Shift+Z undo/redo.
 
 The validation panel re-checks the room on every change (degenerate
 shapes, spawns on unwalkable ground, missing hotspot commands, …) with

@@ -294,6 +294,25 @@ function render() {
     drawVertices(state.draft, '#ffffff');
   }
 
+  // transform handles around the selection
+  if (state.tool === 'select') {
+    const bb = selectionBBox();
+    if (bb) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(X(bb[0]), Y(bb[1]), X(bb[2] - bb[0]), Y(bb[3] - bb[1]));
+      ctx.setLineDash([]);
+      for (const [hx, hy] of HANDLES) {
+        const [px, py] = handlePoint(bb, hx, hy);
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#10102a';
+        ctx.fillRect(X(px) - 5, Y(py) - 5, 10, 10);
+        ctx.strokeRect(X(px) - 5, Y(py) - 5, 10, 10);
+      }
+    }
+  }
+
   // hero-size ghosts
   if (state.preview) {
     const sAH = w.scaleAtHorizon ?? 0.45;
@@ -386,6 +405,8 @@ function hitTest(x, y) {
   for (const [i, h] of (w.hotspots || []).entries()) {
     if (h.rect && pointInRect(x, y, h.rect)) return { kind: 'hotspot', index: i };
   }
+  // the horizon line is grabbable too (before large shape bodies swallow it)
+  if (Math.abs(y - (w.horizon ?? 0.55)) < HIT / 2) return { kind: 'horizon-line' };
   // shape bodies
   for (const [kind, list] of [['obstacle', w.obstacles], ['area', w.areas]]) {
     for (const [i, s] of (list || []).entries()) {
@@ -398,6 +419,116 @@ function hitTest(x, y) {
 function moveShape(shape, dx, dy) {
   if (isRect(shape)) return [shape[0] + dx, shape[1] + dy, shape[2] + dx, shape[3] + dy];
   return shape.map(([px, py]) => [px + dx, py + dy]);
+}
+
+/* ---- transform handles: every selected element gets a resizable bbox ---- */
+
+function selectionBBox() {
+  const sel = state.selection;
+  const w = walk();
+  if (!sel || !w) return null;
+  if (sel.kind === 'area' || sel.kind === 'obstacle') {
+    const s = (sel.kind === 'area' ? w.areas : w.obstacles)?.[sel.index];
+    return s ? shapeBounds(s) : null;
+  }
+  if (sel.kind === 'overlay') {
+    const r = w.overlays?.[sel.index]?.rect;
+    return r ? normRect(r) : null;
+  }
+  if (sel.kind === 'hotspot') {
+    const r = w.hotspots?.[sel.index]?.rect;
+    return r ? normRect(r) : null;
+  }
+  return null;
+}
+
+// hx/hy: -1 = left/top edge, +1 = right/bottom edge, 0 = middle of that axis
+const HANDLES = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+
+function handlePoint(bb, hx, hy) {
+  const [x1, y1, x2, y2] = bb;
+  return [hx < 0 ? x1 : hx > 0 ? x2 : (x1 + x2) / 2, hy < 0 ? y1 : hy > 0 ? y2 : (y1 + y2) / 2];
+}
+
+function handleAt(x, y) {
+  const bb = selectionBBox();
+  if (!bb) return null;
+  for (const [hx, hy] of HANDLES) {
+    const [px, py] = handlePoint(bb, hx, hy);
+    if (near(x, y, px, py)) return { hx, hy, bb };
+  }
+  return null;
+}
+
+function handleCursor(hx, hy) {
+  if (hx === 0) return 'ns-resize';
+  if (hy === 0) return 'ew-resize';
+  return hx === hy ? 'nwse-resize' : 'nesw-resize';
+}
+
+const MIN_SIZE = 0.01;
+
+// Resize the selected element to the bbox implied by dragging one handle of
+// the drag-start bbox to (x, y). Polygons scale through the bbox; overlays
+// keep their baseline at the same relative depth.
+function applyResize(d, x, y) {
+  const w = walk();
+  const sel = state.selection;
+  if (!sel || !w) return;
+  let [x1, y1, x2, y2] = d.bb;
+  if (d.hx < 0) x1 = Math.min(x, x2 - MIN_SIZE);
+  if (d.hx > 0) x2 = Math.max(x, x1 + MIN_SIZE);
+  if (d.hy < 0) y1 = Math.min(y, y2 - MIN_SIZE);
+  if (d.hy > 0) y2 = Math.max(y, y1 + MIN_SIZE);
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  const nb = [clamp(x1), clamp(y1), clamp(x2), clamp(y2)].map((n) => +n.toFixed(4));
+
+  if (sel.kind === 'overlay') {
+    const o = w.overlays[sel.index];
+    const [, oy1, , oy2] = d.bb;
+    const rel = ((d.baseline ?? oy2) - oy1) / Math.max(1e-6, oy2 - oy1);
+    o.rect = nb;
+    o.baseline = +(nb[1] + rel * (nb[3] - nb[1])).toFixed(4);
+  } else if (sel.kind === 'hotspot') {
+    w.hotspots[sel.index].rect = nb;
+  } else if (sel.kind === 'area' || sel.kind === 'obstacle') {
+    const list = sel.kind === 'area' ? w.areas : w.obstacles;
+    if (isRect(d.orig)) {
+      list[sel.index] = nb;
+    } else {
+      const [ox1, oy1, ox2, oy2] = d.bb;
+      const sx = (nb[2] - nb[0]) / Math.max(1e-6, ox2 - ox1);
+      const sy = (nb[3] - nb[1]) / Math.max(1e-6, oy2 - oy1);
+      list[sel.index] = d.orig.map(([px, py]) => [
+        +(nb[0] + (px - ox1) * sx).toFixed(4),
+        +(nb[1] + (py - oy1) * sy).toFixed(4),
+      ]);
+    }
+  }
+}
+
+// Nearest polygon edge of the selected shape within range: for double-click
+// vertex insertion. Returns { index (of list entry), after (vertex idx) }.
+function polygonEdgeAt(x, y) {
+  const sel = state.selection;
+  const w = walk();
+  if (!sel || (sel.kind !== 'area' && sel.kind !== 'obstacle')) return null;
+  const s = (sel.kind === 'area' ? w.areas : w.obstacles)?.[sel.index];
+  if (!isPolygon(s)) return null;
+  let best = null;
+  let bestD = HIT * HIT * 2;
+  for (let i = 0; i < s.length; i++) {
+    const [ax, ay] = s[i];
+    const [bx, by] = s[(i + 1) % s.length];
+    const abx = bx - ax;
+    const aby = by - ay;
+    const t = Math.min(1, Math.max(0, ((x - ax) * abx + (y - ay) * aby) / Math.max(1e-9, abx * abx + aby * aby)));
+    const dx = x - (ax + t * abx);
+    const dy = y - (ay + t * aby);
+    const dist = dx * dx + dy * dy;
+    if (dist < bestD) { bestD = dist; best = { after: i }; }
+  }
+  return best;
 }
 
 function deleteSelection() {
@@ -691,7 +822,32 @@ canvas.addEventListener('pointerdown', (e) => {
 
   switch (state.tool) {
     case 'select': {
+      // 1. transform handles of the current selection win over everything
+      //    (except Alt-clicks, which are always vertex operations)
+      const h = e.altKey ? null : handleAt(x, y);
+      if (h) {
+        state.undo.push(snapshot());
+        state.redo.length = 0;
+        const sel = state.selection;
+        const drag = { mode: 'resize', hx: h.hx, hy: h.hy, bb: h.bb };
+        if (sel.kind === 'area' || sel.kind === 'obstacle') {
+          drag.orig = JSON.parse(JSON.stringify((sel.kind === 'area' ? w.areas : w.obstacles)[sel.index]));
+        } else if (sel.kind === 'overlay') {
+          drag.baseline = w.overlays[sel.index].baseline;
+        }
+        state.dragging = drag;
+        break;
+      }
       const hit = hitTest(x, y);
+      // 2. Alt-click deletes a polygon vertex (triangles are the floor)
+      if (hit && e.altKey && hit.vertex != null && (hit.kind === 'area' || hit.kind === 'obstacle')) {
+        const list = hit.kind === 'area' ? w.areas : w.obstacles;
+        if (isPolygon(list[hit.index]) && list[hit.index].length > 3) {
+          state.selection = { kind: hit.kind, index: hit.index };
+          mutate(() => list[hit.index].splice(hit.vertex, 1));
+          break;
+        }
+      }
       state.selection = hit;
       if (hit) {
         state.undo.push(snapshot());
@@ -749,8 +905,30 @@ canvas.addEventListener('pointermove', (e) => {
   $('coords').textContent = `${x.toFixed(3)}, ${y.toFixed(3)}`;
 
   const d = state.dragging;
-  if (!d) { if (state.draft) render(); return; }
+  if (!d) {
+    // hover feedback in select mode: resize cursors over handles, grab over
+    // the horizon line
+    if (state.tool === 'select' && room()) {
+      const h = handleAt(x, y);
+      canvas.style.cursor = h ? handleCursor(h.hx, h.hy)
+        : Math.abs(y - (walk()?.horizon ?? 0.55)) < HIT / 2 ? 'row-resize' : 'crosshair';
+    } else canvas.style.cursor = 'crosshair';
+    if (state.draft) render();
+    return;
+  }
   const w = walk();
+
+  if (d.mode === 'resize') {
+    applyResize(d, x, y);
+    render();
+    return;
+  }
+  if (d.kind === 'horizon-line') {
+    w.horizon = +Math.min(0.95, Math.max(0.05, y)).toFixed(4);
+    syncSettingsPanel();
+    render();
+    return;
+  }
 
   if (d.kind === 'obstacle-rect' || d.kind === 'hotspot') {
     d.rect = [d.startX, d.startY, x, y];
@@ -819,7 +997,19 @@ window.addEventListener('pointerup', () => {
   }
 });
 
-canvas.addEventListener('dblclick', () => closeDraft());
+canvas.addEventListener('dblclick', (e) => {
+  if (state.draft) { closeDraft(); return; }
+  // double-click on a selected polygon's edge inserts a vertex there
+  if (state.tool === 'select') {
+    const [x, y] = eventNorm(e);
+    const edge = polygonEdgeAt(x, y);
+    if (edge) {
+      const sel = state.selection;
+      const list = sel.kind === 'area' ? walk().areas : walk().obstacles;
+      mutate(() => list[sel.index].splice(edge.after + 1, 0, [+x.toFixed(4), +y.toFixed(4)]));
+    }
+  }
+});
 
 function closeDraft() {
   if (!state.draft || state.draft.length < 3) { state.draft = null; render(); return; }
