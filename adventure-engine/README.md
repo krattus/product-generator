@@ -286,6 +286,61 @@ assembled into `art/hero-walk.png`. Typing still drives every interaction;
 Up/Down browse history while you're composing a command and steer the hero
 when the input is empty.
 
+## Level editor
+
+`editor/index.html` is a visual editor for everything the walk layer reads.
+Serve the repo and open it:
+
+```
+cd adventure-engine && python3 -m http.server 8000
+# -> http://localhost:8000/editor/
+```
+
+Workflow: add a room, load its background (file picker, or an engine
+path like `art/courtyard.jpg` resolved against the asset-base field), then:
+
+- **Walk area** — click vertices, Enter/double-click closes the polygon.
+  Rooms without areas fall back to the horizon…bottom band.
+- **Obstacle ▭ / ⬠** — blocked rectangles and polygons.
+- **Horizon** — drag the depth line; sliders set `scaleAtHorizon`; a
+  checkbox shows hero-size ghosts at three depths.
+- **Spawn / NPC / Hotspot** — per-direction entry points, NPC stand
+  positions, and walk-in trigger rects (e.g. a cave mouth firing `in`).
+- **Screen edges** — map top/bottom/left/right to exit commands.
+- **Magic wand** — flood-fill selection by color (tolerance slider,
+  Shift adds, Alt subtracts), then **→ Overlay** cuts the selected pixels
+  into a foreground occlusion piece (drag its dashed baseline to set the
+  depth at which the hero passes behind it) or **→ Obstacle** drops a
+  collision footprint under it. **Load AI segmenter** optionally fetches
+  SAM (transformers.js, CDN) for click-to-mask segmentation; when it
+  can't load, the wand keeps working.
+- **▶ Test walk** — drive a puppet with the arrow keys under the exact
+  engine movement rules; edge and hotspot triggers show as toasts.
+- **Select** — drag vertices, shapes, markers, and overlay baselines;
+  Delete removes; Ctrl+Z / Ctrl+Shift+Z undo/redo.
+
+The validation panel re-checks the room on every change (degenerate
+shapes, spawns on unwalkable ground, missing hotspot commands, …) with
+the same `validateWalk()` the engine runs, so editor and engine can never
+disagree about what's valid.
+
+**Export** downloads a `walk-data.json` world file (overlay images inline
+as data URIs, or written to separate PNGs via *Download overlay PNGs*).
+The engine loads it with:
+
+```js
+import { applyWalkData } from './src/walk-data.js';
+applyWalkData(game, worldJson);  // field-level merge; game-code functions win
+```
+
+Merge semantics: JSON values replace same-named fields in a room's walk
+block, except fields that are functions in game code (state-dependent
+obstacles/NPCs like the toll troll) — those always win, and the loader
+reports the conflict. Unknown rooms are reported, never created. All
+coordinates are normalized 0..1 in background-image space; the engine
+maps them through the background's cover transform, so what you draw in
+the editor is pixel-for-pixel what the game plays.
+
 ## Single-file build
 
 `node build-single-file.mjs [gameDir] [outFile]` bundles the engine, browser UI,

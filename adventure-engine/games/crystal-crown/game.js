@@ -41,6 +41,8 @@ game.room('courtyard', {
   walk: {
     horizon: 0.55,
     obstacles: [[0.36, 0.58, 0.64, 0.86]], // fountain
+    // The fountain cutout draws over the hero when he walks behind it.
+    overlays: [{ image: 'art/overlay-fountain.png', rect: [0.37, 0.546, 0.63, 0.9], baseline: 0.86 }],
     spawn: { north: [0.3, 0.64], default: [0.5, 0.93] },
   },
   name: 'Castle Courtyard',

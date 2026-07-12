@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adventure Level Editor</title>
+  <link rel="stylesheet" href="./editor.css" />
+</head>
+<body>
+  <!--
+    Level editor for the adventure-engine walk layer.
+    Serve the repo over HTTP and open this page, e.g.:
+        cd adventure-engine && python3 -m http.server 8000
+        http://localhost:8000/editor/
+    Everything exports to a world JSON file that the engine loads with
+    applyWalkData(game, json). Schema: ../src/walk-data.js
+  -->
+  <div class="ed-root">
+    <header class="ed-topbar">
+      <strong>Adventure Level Editor</strong>
+      <span class="ed-roomlabel" id="room-label">no room</span>
+      <span class="ed-coords" id="coords"></span>
+      <span class="ed-spacer"></span>
+      <button id="btn-undo" title="Ctrl+Z">Undo</button>
+      <button id="btn-redo" title="Ctrl+Shift+Z">Redo</button>
+      <button id="btn-test" class="ed-accent">▶ Test walk</button>
+    </header>
+
+    <div class="ed-main">
+      <aside class="ed-sidebar">
+        <section>
+          <h3>Rooms</h3>
+          <div id="room-list" class="ed-roomlist"></div>
+          <div class="ed-row">
+            <input id="new-room-id" placeholder="room id" />
+            <button id="btn-add-room">Add</button>
+          </div>
+          <div class="ed-row">
+            <label class="ed-file">Background image<input type="file" id="bg-file" accept="image/*" /></label>
+          </div>
+          <div class="ed-row">
+            <input id="bg-path" placeholder="or image path e.g. art/room.jpg" />
+            <button id="btn-bg-path">Load</button>
+          </div>
+          <div class="ed-row">
+            <input id="asset-base" title="asset base — image paths resolve against this" />
+          </div>
+        </section>
+
+        <section>
+          <h3>Tools</h3>
+          <div class="ed-tools" id="tools">
+            <button data-tool="select" class="active" title="V — drag vertices/markers, Del deletes">Select</button>
+            <button data-tool="area" title="A — click vertices, Enter/dbl-click closes">Walk area</button>
+            <button data-tool="obstacle-rect" title="R — drag a blocked rectangle">Obstacle ▭</button>
+            <button data-tool="obstacle-poly" title="O — click vertices, Enter closes">Obstacle ⬠</button>
+            <button data-tool="horizon" title="H — drag the horizon line">Horizon</button>
+            <button data-tool="spawn" title="S — place spawn for the chosen direction">Spawn</button>
+            <button data-tool="npc" title="N — place the named NPC">NPC</button>
+            <button data-tool="hotspot" title="T — drag a rect, then enter its command">Hotspot</button>
+            <button data-tool="wand" title="W — click to select by color">Magic wand</button>
+          </div>
+          <div id="tool-options" class="ed-tooloptions"></div>
+        </section>
+
+        <section id="wand-section" hidden>
+          <h3>Selection</h3>
+          <div class="ed-row"><label>Tolerance <input type="range" id="wand-tolerance" min="4" max="120" value="40" /></label></div>
+          <div class="ed-row"><label><input type="checkbox" id="wand-contiguous" checked /> contiguous</label></div>
+          <div class="ed-row ed-hint">click = new · Shift = add · Alt = subtract</div>
+          <div class="ed-row">
+            <button id="btn-sam">Load AI segmenter</button>
+            <span id="sam-status" class="ed-hint"></span>
+          </div>
+          <div class="ed-row ed-hint" id="sam-hint" hidden>AI mode: click = positive point · Shift = negative · then Apply</div>
+          <div class="ed-row"><button id="btn-sam-apply" hidden>Apply AI mask</button></div>
+          <div class="ed-row">
+            <button id="btn-make-overlay">→ Overlay</button>
+            <button id="btn-make-obstacle">→ Obstacle</button>
+            <button id="btn-clear-sel">Clear</button>
+          </div>
+        </section>
+
+        <section>
+          <h3>Room settings</h3>
+          <div class="ed-row"><label>Horizon <input type="range" id="opt-horizon" min="0" max="100" value="55" /> <span id="opt-horizon-v">0.55</span></label></div>
+          <div class="ed-row"><label>Scale at horizon <input type="range" id="opt-scale" min="10" max="100" value="45" /> <span id="opt-scale-v">0.45</span></label></div>
+          <div class="ed-row"><label><input type="checkbox" id="opt-preview" /> show hero-size ghosts</label></div>
+          <h4>Screen edges → command</h4>
+          <div class="ed-edges">
+            <label>top <select id="edge-top"></select></label>
+            <label>bottom <select id="edge-bottom"></select></label>
+            <label>left <select id="edge-left"></select></label>
+            <label>right <select id="edge-right"></select></label>
+          </div>
+        </section>
+
+        <section>
+          <h3>Validation</h3>
+          <div id="validation" class="ed-validation">—</div>
+        </section>
+
+        <section>
+          <h3>World file</h3>
+          <div class="ed-row">
+            <button id="btn-export">Download JSON</button>
+            <button id="btn-copy">Copy JSON</button>
+          </div>
+          <div class="ed-row">
+            <button id="btn-export-pngs">Download overlay PNGs</button>
+          </div>
+          <div class="ed-row">
+            <label class="ed-file">Import JSON<input type="file" id="import-file" accept=".json,application/json" /></label>
+          </div>
+        </section>
+      </aside>
+
+      <div class="ed-canvaswrap">
+        <canvas id="canvas"></canvas>
+        <div id="toast" class="ed-toast" hidden></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./editor.js"></script>
+</body>
+</html>

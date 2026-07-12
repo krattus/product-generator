@@ -21,6 +21,7 @@ const sources = [
   'src/entities.js',
   'src/dialogue.js',
   'src/engine.js',
+  'src/walk-data.js',
   'ui/browser-ui.js',
   'ui/walk-ui.js',
 ].map((f) => path.join(here, f));

@@ -1,37 +1,27 @@
 // walk-ui.js — King's Quest-style walkabout layer for the browser UI.
 //
 // Turns the scene panel into a live canvas: an animated hero you steer with
-// the arrow keys / WASD, NPC sprites standing in the rooms, perspective
-// scaling, and room transitions by walking off the screen edges. The text
-// parser keeps working exactly as before — this is Sierra's classic
-// walk-and-type interface.
+// the arrow keys / WASD, NPC sprites standing in the rooms, foreground
+// occlusion overlays, perspective scaling, and room transitions by walking
+// off the screen edges. The text parser keeps working exactly as before —
+// this is Sierra's classic walk-and-type interface.
 //
 //   import { createBrowserUI } from './browser-ui.js';
 //   import { attachWalkLayer } from './walk-ui.js';
-//   const ui = createBrowserUI(game, root);
+//   createBrowserUI(game, root);
 //   attachWalkLayer(game, root);
 //
-// Authoring — game config:
-//   sprites: {
-//     hero: {
-//       side:  { image: 'art/hero-walk.png', frames: 8, fps: 10 },  // walk cycle, facing right
-//       front: { image: 'art/hero-front.png' },
-//       back:  { image: 'art/hero-back.png' },
-//       height: 0.34,          // hero height as a fraction of scene height (at the bottom edge)
-//     },
-//     king: { image: "art/npc-king.png", height: 0.32 },   (any art/ path works)
-//   }
-//
-// Authoring — per-room, all coordinates normalized 0..1:
-//   walk: {
-//     horizon: 0.55,                  // top of the walkable floor
-//     scaleAtHorizon: 0.45,           // sprite scale multiplier at the horizon
-//     obstacles: [[x1, y1, x2, y2]],  // rectangles the hero cannot enter
-//     npcs: { king: [0.5, 0.68] },    // characterId -> standing position
-//     spawn: { south: [0.5, 0.94] },  // entry-direction -> spawn point (has sane defaults)
-//     edges: { top: 'north' },        // screen edge -> direction (defaults from room exits)
-//     hotspots: [{ rect: [x1,y1,x2,y2], command: 'in' }],  // walk-in triggers
-//   }
+// Room walk data is authored either by hand in the game file or with the
+// level editor (editor/index.html) and loaded via applyWalkData(). The full
+// schema lives in src/walk-data.js. ALL coordinates — walk shapes, spawns,
+// NPC positions, the hero — are normalized 0..1 in BACKGROUND-IMAGE space,
+// so editor and engine agree pixel-for-pixel; the engine maps them through
+// the background's cover transform when drawing.
+// `obstacles` and `npcs` may be functions of the game ctx (game code only),
+// so the world can react to state — e.g. a troll blocking a bridge until
+// paid.
+
+import { walkableAt, nearestWalkable, pointInRect, validateWalk } from '../src/walk-data.js';
 
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east', in: 'out', out: 'in', up: 'down', down: 'up' };
 
@@ -47,6 +37,10 @@ const DEFAULT_SPAWNS = {
   default: [0.5, 0.82],
 };
 
+// How close to a screen edge "pushing against the boundary" still counts as
+// leaving. Lets walk areas that stop short of the actual edge still exit.
+const EDGE_MARGIN = 0.06;
+
 export function attachWalkLayer(game, root) {
   const scene = root.querySelector('.adv-scene');
   const input = root.querySelector('.adv-input');
@@ -60,14 +54,24 @@ export function attachWalkLayer(game, root) {
   /* ---------------- image loading ---------------- */
 
   const cache = new Map();
+  const warned = new Set();
+  function warnOnce(key, message) {
+    if (warned.has(key)) return;
+    warned.add(key);
+    console.warn(`[walk-ui] ${message}`);
+  }
+
   function loadImage(path) {
     if (!path) return null;
     if (cache.has(path)) return cache.get(path);
     const img = new Image();
+    img.onerror = () => warnOnce(`img:${path}`, `image failed to load: ${path}`);
     img.src = path.startsWith('data:') ? path : (game.config.assetBase || '') + path;
     cache.set(path, img);
     return img;
   }
+
+  const ready = (img) => img && img.complete && img.naturalWidth > 0;
 
   const spriteDefs = game.config.sprites || {};
   const heroDef = spriteDefs.hero || {};
@@ -86,20 +90,29 @@ export function attachWalkLayer(game, root) {
     animTime: 0,
   };
   const keys = new Set();
-  let currentRoomId = null;
   let pendingWalkDir = null;   // direction we sent to the engine by walking off an edge
   let transitionLock = 0;      // brief input lock after a room change
 
   function roomWalk() {
     const room = game.rooms.get(game.state?.currentRoom);
     const w = room?.def.walk || {};
+    if (room && !warned.has(`val:${room.id}`)) {
+      warned.add(`val:${room.id}`);
+      for (const msg of validateWalk(w, room.id)) console.warn(`[walk-ui] ${msg}`);
+    }
     // obstacles/npcs may be functions of ctx, so rooms can react to game
     // state (the troll steps aside once paid).
-    const resolve = (v) => (typeof v === 'function' ? v(game.ctx()) : v);
+    const resolve = (v) => {
+      if (typeof v !== 'function') return v;
+      try { return v(game.ctx()); }
+      catch (e) { warnOnce(`fn:${room?.id}`, `walk data function threw in ${room?.id}: ${e.message}`); return null; }
+    };
     return {
       horizon: w.horizon ?? 0.55,
       scaleAtHorizon: w.scaleAtHorizon ?? 0.45,
+      areas: w.areas || null,
       obstacles: resolve(w.obstacles) || [],
+      overlays: w.overlays || [],
       npcs: resolve(w.npcs) || {},
       spawn: w.spawn || {},
       edges: w.edges || autoEdges(room),
@@ -118,17 +131,14 @@ export function attachWalkLayer(game, root) {
   }
 
   function scaleAt(y, w) {
-    const t = Math.min(1, Math.max(0, (y - w.horizon) / (1 - w.horizon)));
+    const t = Math.min(1, Math.max(0, (y - w.horizon) / Math.max(0.05, 1 - w.horizon)));
     return w.scaleAtHorizon + (1 - w.scaleAtHorizon) * t;
   }
 
-  function inRect(x, y, r) {
-    return x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3];
-  }
-
-  function blocked(x, y, w) {
-    if (y < w.horizon || y > 0.985) return true;
-    return w.obstacles.some((r) => inRect(x, y, r));
+  function placeHero(x, y, w) {
+    const snapped = nearestWalkable(x, y, w) || [x, y];
+    hero.x = snapped[0];
+    hero.y = snapped[1];
   }
 
   /* ---------------- room transitions ---------------- */
@@ -138,9 +148,8 @@ export function attachWalkLayer(game, root) {
     pendingWalkDir = null;
     const w = roomWalk();
     const entered = dir ? OPPOSITE[dir] || 'default' : 'default';
-    const spawn = w.spawn[entered] || DEFAULT_SPAWNS[entered] || DEFAULT_SPAWNS.default;
-    hero.x = spawn[0];
-    hero.y = Math.max(spawn[1], w.horizon + 0.01);
+    const spawn = w.spawn[entered] || w.spawn.default || DEFAULT_SPAWNS[entered] || DEFAULT_SPAWNS.default;
+    placeHero(spawn[0], spawn[1], w);
     hero.facing = dir === 'west' ? 'left' : dir === 'east' ? 'right' : dir === 'north' || dir === 'in' || dir === 'up' ? 'up' : 'down';
     transitionLock = 350; // ms — so a held key doesn't instantly walk back out
   });
@@ -150,8 +159,7 @@ export function attachWalkLayer(game, root) {
   if (game.state) {
     const w0 = roomWalk();
     const sp = w0.spawn.default || DEFAULT_SPAWNS.default;
-    hero.x = sp[0];
-    hero.y = Math.max(sp[1], w0.horizon + 0.01);
+    placeHero(sp[0], sp[1], w0);
   }
 
   function tryEdgeCommand(command) {
@@ -160,7 +168,7 @@ export function attachWalkLayer(game, root) {
     game.command(command);
     if (game.state.currentRoom === before) {
       pendingWalkDir = null;
-      return false; // blocked exit (troll, chasm...) — caller nudges the hero back
+      return false; // blocked exit (troll, chasm...) — hero stays put
     }
     return true;
   }
@@ -214,34 +222,41 @@ export function attachWalkLayer(game, root) {
 
     hero.animTime += dt;
     const s = scaleAt(hero.y, w);
-    let nx = hero.x + dx * SPEED_X * s * dt;
-    let ny = hero.y + dy * SPEED_Y * s * dt;
+    const nx = hero.x + dx * SPEED_X * s * dt;
+    const ny = hero.y + dy * SPEED_Y * s * dt;
 
-    // Screen-edge exits.
+    // Where did we actually get to? Try the full move, then each axis, so
+    // the hero slides along walls. If the hero is somehow standing inside
+    // blocked ground (bad spawn, live-edited data), let them walk out
+    // rather than trapping them.
+    const stuck = !walkableAt(hero.x, hero.y, w);
+    let mx = hero.x;
+    let my = hero.y;
+    if (stuck || walkableAt(nx, ny, w)) { mx = nx; my = ny; }
+    else if (walkableAt(nx, hero.y, w)) { mx = nx; }
+    else if (walkableAt(hero.x, ny, w)) { my = ny; }
+    const blockedNow = mx === hero.x && my === hero.y;
+
+    // Screen-edge exits: crossing the hard edge, or pushing against an
+    // unwalkable boundary while already within the edge margin (for walk
+    // areas that stop short of the screen edge).
     const edges = w.edges;
-    if (nx <= 0.005 && edges.left) { if (tryEdgeCommand(edges.left)) return; nx = 0.02; }
-    if (nx >= 0.995 && edges.right) { if (tryEdgeCommand(edges.right)) return; nx = 0.98; }
-    if (ny >= 0.985 && edges.bottom) { if (tryEdgeCommand(edges.bottom)) return; ny = 0.97; }
-    if (ny <= w.horizon + 0.005 && edges.top) { if (tryEdgeCommand(edges.top)) return; ny = w.horizon + 0.02; }
+    const tryExit = (cmd) => cmd && tryEdgeCommand(cmd);
+    if (dx < 0 && edges.left && (nx <= 0.005 || (blockedNow && hero.x <= EDGE_MARGIN))) { if (tryExit(edges.left)) return; }
+    if (dx > 0 && edges.right && (nx >= 0.995 || (blockedNow && hero.x >= 1 - EDGE_MARGIN))) { if (tryExit(edges.right)) return; }
+    if (dy > 0 && edges.bottom && (ny >= 0.985 || (blockedNow && hero.y >= 1 - EDGE_MARGIN))) { if (tryExit(edges.bottom)) return; }
+    if (dy < 0 && edges.top && (ny <= w.horizon + 0.005 || (blockedNow && hero.y <= w.horizon + EDGE_MARGIN))) { if (tryExit(edges.top)) return; }
 
-    // Hotspots (doorways, cave mouths).
+    // Hotspots (doorways, cave mouths) trigger on the attempted position,
+    // so they work even when their ground is not walkable.
     for (const h of w.hotspots) {
-      if (inRect(nx, ny, h.rect)) {
+      if (h?.rect && h.command && pointInRect(nx, ny, h.rect)) {
         if (tryEdgeCommand(h.command)) return;
-        nx = hero.x; ny = hero.y;
       }
     }
 
-    // Obstacles: try full move, then each axis, so the hero slides along
-    // walls. If the hero is somehow standing inside an obstacle (bad spawn,
-    // edited room data), let them walk out rather than trapping them.
-    const stuck = blocked(hero.x, hero.y, w);
-    if (stuck || !blocked(nx, ny, w)) { hero.x = nx; hero.y = ny; }
-    else if (!blocked(nx, hero.y, w)) { hero.x = nx; }
-    else if (!blocked(hero.x, ny, w)) { hero.y = ny; }
-
-    hero.x = Math.min(0.995, Math.max(0.005, hero.x));
-    hero.y = Math.min(0.985, Math.max(w.horizon + 0.005, hero.y));
+    hero.x = Math.min(0.995, Math.max(0.005, mx));
+    hero.y = Math.min(0.985, Math.max(0.015, my));
   }
 
   /* ---------------- rendering ---------------- */
@@ -259,7 +274,9 @@ export function attachWalkLayer(game, root) {
     return true;
   }
 
-  function drawCover(img) {
+  // The background is drawn "cover"-fit; overlays cut from it must land on
+  // exactly the same pixels, so both share this transform.
+  function coverTransform(img) {
     const cw = canvas.width;
     const ch = canvas.height;
     const ir = img.naturalWidth / img.naturalHeight;
@@ -268,17 +285,32 @@ export function attachWalkLayer(game, root) {
     let dh = ch;
     if (ir > cr) dw = ch * ir;
     else dh = cw / ir;
-    ctx2d.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+    return { ox: (cw - dw) / 2, oy: (ch - dh) / 2, dw, dh };
+  }
+
+  function drawCover(img) {
+    const { ox, oy, dw, dh } = coverTransform(img);
+    ctx2d.drawImage(img, ox, oy, dw, dh);
+  }
+
+  // Maps image-space normalized coords to canvas pixels (identity when the
+  // room has no background image).
+  let frameT = null;
+  function toCanvas(x, y) {
+    if (!frameT) return [x * canvas.width, y * canvas.height];
+    return [frameT.ox + x * frameT.dw, frameT.oy + y * frameT.dh];
+  }
+  function frameHeightPx(h) {
+    return h * (frameT ? frameT.dh : canvas.height);
   }
 
   function drawSprite(img, x, y, height, { flip = false, frames = 1, frame = 0 } = {}) {
-    if (!img || !img.complete || !img.naturalWidth) return;
+    if (!ready(img)) return;
     const fw = img.naturalWidth / frames;
     const fh = img.naturalHeight;
-    const h = height * canvas.height;
+    const h = frameHeightPx(height);
     const wpx = h * (fw / fh);
-    const px = x * canvas.width;
-    const py = y * canvas.height;
+    const [px, py] = toCanvas(x, y);
     ctx2d.save();
     ctx2d.imageSmoothingEnabled = false;
     if (flip) {
@@ -288,6 +320,19 @@ export function attachWalkLayer(game, root) {
     } else {
       ctx2d.drawImage(img, frame * fw, 0, fw, fh, px - wpx / 2, py - h, wpx, h);
     }
+    ctx2d.restore();
+  }
+
+  // Overlays anchor to the background's cover transform, not the canvas, so
+  // they stay glued to the scenery at any window size.
+  function drawOverlay(img, rect, bgTransform) {
+    if (!ready(img) || !bgTransform) return;
+    const { ox, oy, dw, dh } = bgTransform;
+    const x = ox + rect[0] * dw;
+    const y = oy + rect[1] * dh;
+    ctx2d.save();
+    ctx2d.imageSmoothingEnabled = false;
+    ctx2d.drawImage(img, x, y, (rect[2] - rect[0]) * dw, (rect[3] - rect[1]) * dh);
     ctx2d.restore();
   }
 
@@ -305,7 +350,8 @@ export function attachWalkLayer(game, root) {
   function tick(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    step(dt);
+    try { step(dt); }
+    catch (e) { warnOnce('step', `simulation error: ${e.message}`); }
 
     if (!fitCanvas()) { requestAnimationFrame(tick); return; }
     ctx2d.clearRect(0, 0, canvas.width, canvas.height);
@@ -315,37 +361,43 @@ export function attachWalkLayer(game, root) {
     const gameOver = !state || state.status !== 'playing';
     const dark = room?.def.dark && !game.hasLight();
 
-    if (gameOver) {
-      const title = loadImage(game.config.titleImage);
-      ctx2d.fillStyle = '#000';
-      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
-      if (title && title.complete && title.naturalWidth) drawCover(title);
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    if (dark) {
-      ctx2d.fillStyle = '#000';
-      ctx2d.fillRect(0, 0, canvas.width, canvas.height);
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    const bg = room?.def.image ? loadImage(room.def.image) : null;
     ctx2d.fillStyle = '#000';
     ctx2d.fillRect(0, 0, canvas.width, canvas.height);
-    if (bg && bg.complete && bg.naturalWidth) drawCover(bg);
 
-    // Painter's order: everything standing on the floor sorts by feet-y.
+    if (gameOver) {
+      const title = loadImage(game.config.titleImage);
+      if (ready(title)) drawCover(title);
+      requestAnimationFrame(tick);
+      return;
+    }
+    if (dark) { requestAnimationFrame(tick); return; }
+
+    const bg = room?.def.image ? loadImage(room.def.image) : null;
+    frameT = null;
+    if (ready(bg)) {
+      frameT = coverTransform(bg);
+      drawCover(bg);
+    }
+
+    // Painter's order: everything standing on the floor sorts by its ground
+    // line — NPCs and the hero by their feet, overlays by their baseline.
     const w = roomWalk();
     const actors = [];
     for (const [charId, pos] of Object.entries(w.npcs)) {
       if (state.charLocations[charId] !== room.id) continue;
       const def = spriteDefs[charId];
-      if (!def) continue;
+      if (!def) { warnOnce(`npc:${charId}`, `no sprite configured for NPC "${charId}"`); continue; }
+      if (!Array.isArray(pos) || pos.length !== 2) continue;
       actors.push({
         y: pos[1],
         draw: () => drawSprite(loadImage(def.image), pos[0], pos[1], (def.height || 0.3) * scaleAt(pos[1], w)),
+      });
+    }
+    for (const o of w.overlays) {
+      if (!o?.image || !Array.isArray(o.rect)) continue;
+      actors.push({
+        y: o.baseline ?? o.rect[3],
+        draw: () => drawOverlay(loadImage(o.image), o.rect, frameT),
       });
     }
     const hs = heroSprite();

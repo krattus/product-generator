@@ -55,7 +55,7 @@ body {
 
 .adv-scene {
   flex: 0 0 auto;
-  aspect-ratio: 16 / 8;
+  aspect-ratio: 16 / 9;
   max-height: 52vh;
   background: #000;
   border-bottom: 2px solid #2a2a6a;
