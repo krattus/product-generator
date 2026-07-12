@@ -289,11 +289,16 @@ when the input is empty.
 ## Level editor
 
 `editor/index.html` is a visual editor for everything the walk layer reads.
-Serve the repo and open it:
+Two ways to run it:
 
 ```
+# A. zero-setup single file (rooms and images embedded):
+node build-editor.mjs games/crystal-crown editor.html   # then open editor.html
+
+# B. served from the repo (background paths resolve against ../games/...):
 cd adventure-engine && python3 -m http.server 8000
 # -> http://localhost:8000/editor/
+# (serving from the repo ROOT instead? use /adventure-engine/editor/)
 ```
 
 Workflow: add a room, load its background (file picker, or an engine

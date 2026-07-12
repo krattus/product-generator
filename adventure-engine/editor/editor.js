@@ -38,7 +38,7 @@ const canvas = $('canvas');
 const ctx = canvas.getContext('2d');
 
 const DIRS = ['', 'north', 'south', 'east', 'west', 'in', 'out', 'up', 'down'];
-const SPAWN_KEYS = ['default', 'north', 'south', 'east', 'west', 'in', 'out', 'up', 'down'];
+const ED_SPAWN_KEYS = ['default', 'north', 'south', 'east', 'west', 'in', 'out', 'up', 'down'];
 
 function room() { return state.roomId ? state.world.rooms[state.roomId] : null; }
 function walk() { const r = room(); if (r && !r.walk) r.walk = {}; return r?.walk; }
@@ -863,7 +863,7 @@ function setTool(tool) {
   $('wand-section').hidden = tool !== 'wand';
   const opts = $('tool-options');
   if (tool === 'spawn') {
-    opts.innerHTML = `<label>direction <select id="spawn-key">${SPAWN_KEYS.map((k) => `<option>${k}</option>`).join('')}</select></label>`;
+    opts.innerHTML = `<label>direction <select id="spawn-key">${ED_SPAWN_KEYS.map((k) => `<option>${k}</option>`).join('')}</select></label>`;
   } else if (tool === 'npc') {
     opts.innerHTML = '<input id="npc-id" placeholder="npc id (matches sprites config)" />';
   } else if (tool === 'area' || tool === 'obstacle-poly') {
@@ -1084,6 +1084,22 @@ function dataURItoBlob(uri) {
   return arr;
 }
 
+function importWorld(data) {
+  if (!data?.rooms) throw new Error('missing rooms');
+  state.undo.push(snapshot());
+  if (data.assetBase) state.world.assetBase = data.assetBase;
+  for (const [id, r] of Object.entries(data.rooms)) {
+    const entry = { walk: r.walk || {} };
+    if (typeof r.image === 'string' && r.image.startsWith('data:')) entry.imageDataURI = r.image;
+    else if (r.image) entry.image = r.image;
+    state.world.rooms[id] = entry;
+    bgCache.delete(id);
+  }
+  state.roomId = state.roomId || Object.keys(state.world.rooms)[0] || null;
+  loadRoomBg();
+  refresh();
+}
+
 $('import-file').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1091,18 +1107,7 @@ $('import-file').addEventListener('change', (e) => {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!data.rooms) throw new Error('missing rooms');
-      state.undo.push(snapshot());
-      for (const [id, r] of Object.entries(data.rooms)) {
-        const entry = { walk: r.walk || {} };
-        if (typeof r.image === 'string' && r.image.startsWith('data:')) entry.imageDataURI = r.image;
-        else if (r.image) entry.image = r.image;
-        state.world.rooms[id] = entry;
-        bgCache.delete(id);
-      }
-      state.roomId = state.roomId || Object.keys(state.world.rooms)[0] || null;
-      loadRoomBg();
-      refresh();
+      importWorld(data);
       toast(`imported ${Object.keys(data.rooms).length} room(s)`);
     } catch (err) {
       toast(`import failed: ${err.message}`);
@@ -1147,6 +1152,11 @@ function refresh() {
 window.addEventListener('resize', render);
 
 /* expose for tests */
-window.__editor = { state, exportWorld, wandSelect, selectRoom, setTool, refresh };
+window.__editor = { state, exportWorld, importWorld, wandSelect, selectRoom, setTool, refresh };
+
+/* single-file builds can embed a starter world (backgrounds as data URIs) */
+if (window.__EMBED_WORLD) {
+  try { importWorld(window.__EMBED_WORLD); } catch (e) { console.warn('embedded world failed:', e); }
+}
 
 refresh();
