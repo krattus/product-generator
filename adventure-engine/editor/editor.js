@@ -1242,12 +1242,32 @@ function exportWorld() {
   return world;
 }
 
-function download(name, text, type = 'application/json') {
+// Hand the viewer a file. Inside the claude.ai artifact viewer plain
+// download links are inert, so use its `downloads` capability when the
+// page has it; served from the repo, fall back to an ordinary link.
+const downloadsReady = (typeof window.claude?.use === 'function')
+  ? window.claude.use('downloads').catch(() => null)
+  : Promise.resolve(null);
+
+async function download(name, data, type = 'application/json') {
+  const downloads = await downloadsReady;
+  if (downloads) {
+    try {
+      await downloads.save({ filename: name, data });
+      return true;
+    } catch (e) {
+      if (e?.code === 'declined') { toast('save cancelled'); return false; }
+      if (e?.code === 'rate_limited') { toast('a save prompt is already open'); return false; }
+      toast(`couldn't save ${name} (${e?.code || 'error'}) — use Copy JSON`);
+      return false;
+    }
+  }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.href = URL.createObjectURL(new Blob([data], { type }));
   a.download = name;
   a.click();
   URL.revokeObjectURL(a.href);
+  return true;
 }
 
 $('btn-export').addEventListener('click', () => {
@@ -1259,21 +1279,22 @@ $('btn-copy').addEventListener('click', async () => {
   toast('copied');
 });
 
-$('btn-export-pngs').addEventListener('click', () => {
-  // Downloads each data-URI overlay as a PNG and rewrites the world to
-  // reference art/overlays/<room>-<n>.png (save the files there yourself).
+$('btn-export-pngs').addEventListener('click', async () => {
+  // Downloads each data-URI overlay as a PNG (one prompt at a time) and,
+  // for each one actually saved, rewrites the world to reference
+  // art/overlays/<room>-<n>.png — put the files there yourself.
   let n = 0;
   for (const [id, r] of Object.entries(state.world.rooms)) {
-    (r.walk?.overlays || []).forEach((o, i) => {
-      if (!o.image?.startsWith('data:')) return;
+    for (const [i, o] of (r.walk?.overlays || []).entries()) {
+      if (!o.image?.startsWith('data:')) continue;
       const name = `${id}-overlay-${i}.png`;
-      download(name, dataURItoBlob(o.image), 'image/png');
+      if (!(await download(name, dataURItoBlob(o.image), 'image/png'))) break;
       o.image = `art/overlays/${name}`;
       n++;
-    });
+    }
   }
   refresh();
-  toast(n ? `${n} PNG(s) downloaded — put them in art/overlays/` : 'no inline overlays to export');
+  toast(n ? `${n} PNG(s) saved — put them in art/overlays/` : 'no inline overlays exported');
 });
 
 function dataURItoBlob(uri) {

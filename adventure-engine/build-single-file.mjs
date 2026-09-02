@@ -62,7 +62,13 @@ for (const ref of artRefs) {
 }
 
 // Title from the game config, if present.
-const title = (js.match(/title:\s*'([^']+)'/) || [, 'Adventure'])[1];
+// Page title from the game's own config (not the engine's doc comments —
+// those mention an example title too). Shouty EGA-era titles get title-cased.
+const gameSrc = fs.readFileSync(path.join(gameDir, 'game.js'), 'utf8');
+const rawTitle = (gameSrc.match(/title:\s*'([^']+)'/) || [, 'Adventure'])[1];
+const title = rawTitle === rawTitle.toUpperCase()
+  ? rawTitle.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+  : rawTitle;
 
 const css = fs.readFileSync(path.join(here, 'ui/style.css'), 'utf8');
 
