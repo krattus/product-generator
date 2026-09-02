@@ -240,7 +240,6 @@ game.room('chamber', {
     'You haul yourself over the chasm lip into a chamber of pure wonder: crystals ' +
     'sprout from every surface, drinking your lantern-light and giving it back a ' +
     'hundredfold. On a natural pedestal of quartz rests the Crystal Crown of Eldoria.',
-  description2: null,
   exits: {
     south: 'cave',
   },

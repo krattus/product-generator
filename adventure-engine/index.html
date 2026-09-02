@@ -13,6 +13,18 @@
     import { game } from './games/crystal-crown/game.js';
     import { createBrowserUI } from './ui/browser-ui.js';
     import { attachWalkLayer } from './ui/walk-ui.js';
+    import { applyWalkData } from './src/walk-data.js';
+
+    // Level-editor output: save the editor's export as walk-data.json next
+    // to the game file and it is applied on top of the game's own walk
+    // data (JSON wins for plain values; game-code functions are kept).
+    try {
+      const res = await fetch(`${game.config.assetBase || ''}walk-data.json`);
+      if (res.ok) {
+        const { applied, warnings } = applyWalkData(game, await res.json());
+        console.info(`[walk-data] applied to ${applied.length} room(s)`, warnings);
+      }
+    } catch { /* no walk-data.json — the game file's walk blocks are used as-is */ }
 
     createBrowserUI(game, document.getElementById('game'));
     attachWalkLayer(game, document.getElementById('game'));

@@ -1,11 +1,18 @@
 {
   "name": "adventure-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A zero-dependency JavaScript framework for crafting King's Quest / Space Quest style adventure games",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "play": "node play.js"
+    "play": "node play.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node --test test/e2e/*.test.mjs",
+    "build": "node build-single-file.mjs games/crystal-crown crystal-crown.html",
+    "build:editor": "node build-editor.mjs games/crystal-crown editor.html"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.1"
   },
   "license": "MIT"
 }

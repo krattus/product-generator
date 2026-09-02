@@ -120,13 +120,17 @@ export function attachWalkLayer(game, root) {
     };
   }
 
+  // Screen edges derived from the room's exits. Exits authored as hidden
+  // (secret passages) stay hidden — walking must not reveal them; declare
+  // walk.edges explicitly if a hidden exit should be walkable.
   function autoEdges(room) {
     const exits = room?.def.exits || {};
+    const visible = (exit) => exit && !(typeof exit === 'object' && exit.hidden);
     const edges = {};
-    if (exits.north) edges.top = 'north';
-    if (exits.south) edges.bottom = 'south';
-    if (exits.east) edges.right = 'east';
-    if (exits.west) edges.left = 'west';
+    if (visible(exits.north)) edges.top = 'north';
+    if (visible(exits.south)) edges.bottom = 'south';
+    if (visible(exits.east)) edges.right = 'east';
+    if (visible(exits.west)) edges.left = 'west';
     return edges;
   }
 
@@ -175,34 +179,56 @@ export function attachWalkLayer(game, root) {
 
   /* ---------------- keyboard ---------------- */
 
-  const KEYMAP = {
-    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-    KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
-  };
+  const ARROWS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  const WASD = { KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
+
+  // Precedence rules (the text input is focused almost all the time, so
+  // this has to be deliberate):
+  //   - arrows walk whenever the input is EMPTY; with text in it they keep
+  //     their editing meaning (caret, history via browser-ui)
+  //   - Shift+arrows never walk: that's the history shortcut while walking
+  //   - WASD only walks when the input is NOT focused — "walk", "attack",
+  //     "search", "drop" all start with those letters
+  // Registered in the capture phase so browser-ui's history handler on the
+  // input never sees an arrow press that the walk layer has claimed.
+  function walkKey(e) {
+    if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return null;
+    const typing = document.activeElement === input;
+    if (ARROWS[e.code]) return typing && input.value !== '' ? null : ARROWS[e.code];
+    if (WASD[e.code]) return typing ? null : WASD[e.code];
+    return null;
+  }
 
   window.addEventListener('keydown', (e) => {
-    const dir = KEYMAP[e.code];
+    const dir = walkKey(e);
     if (!dir) return;
-    // Typed text keeps priority: while the player is composing a command,
-    // Up/Down browse history (browser-ui) and Left/Right move the caret.
-    if (document.activeElement === input && input.value !== '') return;
-    if (e.code.startsWith('Arrow')) e.preventDefault();
+    e.preventDefault();
+    e.stopPropagation();
     keys.add(dir);
-  });
+  }, true);
   window.addEventListener('keyup', (e) => {
-    const dir = KEYMAP[e.code];
+    const dir = ARROWS[e.code] || WASD[e.code];
     if (dir) keys.delete(dir);
-  });
+  }, true);
   window.addEventListener('blur', () => keys.clear());
+
+  game.print('(Arrow keys walk. Shift+Up recalls a previous command.)', 'system');
 
   /* ---------------- simulation ---------------- */
 
   const SPEED_X = 0.32; // screen widths per second at full scale
   const SPEED_Y = 0.18;
 
+  // After an exit or hotspot command fails (locked door, unpaid troll),
+  // don't retry until every movement key has been released — otherwise the
+  // refusal message and a game turn would repeat every animation frame.
+  let latched = false;
+
   function step(dt) {
     if (!game.state || game.state.status !== 'playing') return;
+    if (game._dialogue) { hero.moving = false; return; } // walking mid-conversation would feed the dialogue
     if (transitionLock > 0) { transitionLock -= dt * 1000; return; }
+    if (latched && keys.size === 0) latched = false;
 
     const w = roomWalk();
     let dx = 0;
@@ -241,7 +267,12 @@ export function attachWalkLayer(game, root) {
     // unwalkable boundary while already within the edge margin (for walk
     // areas that stop short of the screen edge).
     const edges = w.edges;
-    const tryExit = (cmd) => cmd && tryEdgeCommand(cmd);
+    const tryExit = (cmd) => {
+      if (!cmd || latched) return false;
+      if (tryEdgeCommand(cmd)) return true;
+      latched = true;
+      return false;
+    };
     if (dx < 0 && edges.left && (nx <= 0.005 || (blockedNow && hero.x <= EDGE_MARGIN))) { if (tryExit(edges.left)) return; }
     if (dx > 0 && edges.right && (nx >= 0.995 || (blockedNow && hero.x >= 1 - EDGE_MARGIN))) { if (tryExit(edges.right)) return; }
     if (dy > 0 && edges.bottom && (ny >= 0.985 || (blockedNow && hero.y >= 1 - EDGE_MARGIN))) { if (tryExit(edges.bottom)) return; }
@@ -251,7 +282,7 @@ export function attachWalkLayer(game, root) {
     // so they work even when their ground is not walkable.
     for (const h of w.hotspots) {
       if (h?.rect && h.command && pointInRect(nx, ny, h.rect)) {
-        if (tryEdgeCommand(h.command)) return;
+        if (tryExit(h.command)) return;
       }
     }
 

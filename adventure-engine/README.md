@@ -282,9 +282,15 @@ Authoring lives in the game file (all coordinates normalized 0..1):
 The hero's walk cycle was made with Higgsfield's video-to-spritesheet
 pipeline: a key pose (`flux_2`), animated by `seedance1_5` with identical
 start/end frames for a seamless loop, frames extracted, chroma-keyed and
-assembled into `art/hero-walk.png`. Typing still drives every interaction;
-Up/Down browse history while you're composing a command and steer the hero
-when the input is empty.
+assembled into `art/hero-walk.png`. Typing still drives every interaction.
+
+Keyboard rules (the text input is focused nearly all the time, so these are
+deliberate): the **arrow keys walk whenever the input is empty**; with text
+in the box they edit as usual. **Shift+Up/Down** recalls command history.
+**WASD** walks only when the input is not focused (click the picture) —
+"walk", "attack", "search" and "drop" all start with those letters. Pushing
+against a locked or refused exit prints its message once per push, never
+once per frame, and walking is frozen while a conversation is open.
 
 ## Level editor
 
@@ -336,7 +342,10 @@ disagree about what's valid.
 
 **Export** downloads a `walk-data.json` world file (overlay images inline
 as data URIs, or written to separate PNGs via *Download overlay PNGs*).
-The engine loads it with:
+**Save it next to the game file** (`games/<id>/walk-data.json`) and it is
+picked up automatically — `index.html` fetches it at startup and
+`build-single-file.mjs` inlines it into the bundle. No code changes needed.
+Under the hood that is:
 
 ```js
 import { applyWalkData } from './src/walk-data.js';

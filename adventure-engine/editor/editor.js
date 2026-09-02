@@ -47,8 +47,13 @@ function walk() { const r = room(); if (r && !r.walk) r.walk = {}; return r?.wal
 /* Undo                                                               */
 /* ================================================================== */
 
+// Undo snapshots leave background images out (they'd be ~100 KB+ per room
+// per step); images aren't undoable and are re-attached on restore.
 function snapshot() {
-  return JSON.stringify({ roomId: state.roomId, rooms: state.world.rooms });
+  return JSON.stringify(
+    { roomId: state.roomId, rooms: state.world.rooms },
+    (k, v) => (k === 'imageDataURI' ? undefined : v),
+  );
 }
 
 function mutate(fn) {
@@ -74,6 +79,10 @@ function redo() {
 
 function restore(snap) {
   const s = JSON.parse(snap);
+  for (const [id, r] of Object.entries(s.rooms)) {
+    const uri = state.world.rooms[id]?.imageDataURI;
+    if (uri) r.imageDataURI = uri;
+  }
   state.world.rooms = s.rooms;
   if (!state.world.rooms[state.roomId]) state.roomId = s.roomId;
   state.selection = null;

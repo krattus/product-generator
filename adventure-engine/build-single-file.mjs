@@ -37,6 +37,16 @@ let js = sources
   })
   .join('\n\n');
 
+// Level-editor export next to the game file? Apply it at startup (art it
+// references gets inlined below along with everything else).
+const walkDataFile = path.join(gameDir, 'walk-data.json');
+if (fs.existsSync(walkDataFile)) {
+  const json = JSON.stringify(JSON.parse(fs.readFileSync(walkDataFile, 'utf8')));
+  // art refs become single-quoted so the inliner below picks them up
+  js += `\n/* ==== walk-data.json (level editor) ==== */\napplyWalkData(game, ${json.replace(/"((?:art|assets|images)\/[^"]+)"/g, "'$1'")});`;
+  console.log('applied walk-data.json from the game directory');
+}
+
 // Inline every art asset referenced as '<relative path>' in the game source.
 const artRefs = [...new Set(js.match(/'(?:art|assets|images)\/[^']+'/g) || [])];
 for (const ref of artRefs) {

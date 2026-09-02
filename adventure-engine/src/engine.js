@@ -796,6 +796,9 @@ export class Game {
     this.state = data.state;
     this._dialogue = null;
     this.print('Game restored.', 'system');
+    // Listeners that track the current room (the walk layer places the hero
+    // on room:enter) need to hear about the restored location too.
+    this.emit('room:enter', { room: this.currentRoom(), firstVisit: false, from: null, restored: true });
     this.lookAround();
     return true;
   }
