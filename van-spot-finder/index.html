@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Van Spot Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!--APP-->
+<div class="app">
+  <aside class="rail">
+    <header class="top">
+      <div class="brand">
+        <h1>Van Spot Finder</h1>
+        <span class="coords">28.5°S · 153.5°E</span>
+      </div>
+      <p class="sub">Shade, sun for your panels and quiet nights, scored for every car park, rest area, lookout and campground around the Northern Rivers.</p>
+      <div class="tabs" id="tabs" role="group" aria-label="Area"></div>
+    </header>
+    <div class="rail-scroll">
+      <section class="block">
+        <h2>What matters tonight</h2>
+        <div class="presets" id="presets"></div>
+        <div class="slider"><label for="w-shade"><span class="dot shade"></span>Shade</label><input id="w-shade" type="range" min="0" max="10" value="5"><output id="o-shade">5</output></div>
+        <div class="slider"><label for="w-solar"><span class="dot solar"></span>Solar</label><input id="w-solar" type="range" min="0" max="10" value="5"><output id="o-solar">5</output></div>
+        <div class="slider"><label for="w-quiet"><span class="dot quiet"></span>Quiet</label><input id="w-quiet" type="range" min="0" max="10" value="5"><output id="o-quiet">5</output></div>
+      </section>
+
+      <section class="block">
+        <h2>Filter</h2>
+        <div class="filters">
+          <label for="f-sleep">Sleeping
+            <select id="f-sleep">
+              <option value="all">Show every spot</option>
+              <option value="nofines" selected>Hide "no camping" spots</option>
+              <option value="ok">Only where sleeping looks OK</option>
+            </select>
+          </label>
+          <label for="f-kind">Type
+            <select id="f-kind">
+              <option value="all">All types</option>
+              <option value="parking">Car parks</option>
+              <option value="rest_area">Rest areas</option>
+              <option value="camp_site">Campgrounds</option>
+              <option value="viewpoint">Lookouts</option>
+              <option value="picnic_site">Picnic areas</option>
+            </select>
+          </label>
+          <label for="f-both"><input id="f-both" type="checkbox"> Shade and sun together</label>
+          <label for="f-excl"><input id="f-excl" type="checkbox"> Show unsuitable (private, height limit)</label>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 id="fc-title">Solar forecast</h2>
+        <div class="forecast" id="forecast"></div>
+        <div class="panel-input">
+          <label for="panel-w">Your panels</label>
+          <input id="panel-w" type="number" min="20" max="2000" step="10" value="200"> W
+          <span id="fc-note"></span>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2 id="list-title">Best spots</h2>
+        <ol class="list" id="list"></ol>
+      </section>
+
+      <section class="block">
+        <h2>Local rules</h2>
+        <ul class="area-notes" id="area-notes"></ul>
+      </section>
+
+      <footer class="credits">
+        <span id="gen-date"></span>
+        <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). Tree cover: <a href="https://esa-worldcover.org" target="_blank" rel="noopener">ESA WorldCover 2021</a> (CC BY 4.0). Forecast: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>.</span>
+        <span>Scores are estimates from map data. Satellite tree cover is from 2021 and misses single trees. Check signs, and look at the satellite view before you drive out.</span>
+      </footer>
+    </div>
+  </aside>
+
+  <main class="map-wrap">
+    <div id="map" aria-label="Map of scored spots"></div>
+    <div class="map-tools">
+      <div class="layer-toggles legend" id="layer-toggles"></div>
+      <div class="legend">
+        <span>Overall score</span>
+        <div class="ramp"></div>
+        <div class="ends"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+      <div id="map-actions"></div>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+    <div class="detail" id="detail" hidden></div>
+  </main>
+</div>
+<!--/APP-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="engine.js"></script>
+<script src="data/van-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

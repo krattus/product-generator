@@ -136,3 +136,9 @@ Adjust with `--concurrency` and `--delay` options.
 ## License
 
 MIT
+
+---
+
+## Also in this repo: Van Spot Finder
+
+`van-spot-finder/` is a separate tool. It scores van-living parking spots (shade, solar, quiet) around Murwillumbah, Burringbar, Mullumbimby and Byron Bay. See [van-spot-finder/README.md](van-spot-finder/README.md).
